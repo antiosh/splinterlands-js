@@ -455,7 +455,7 @@ splinterlands.Card = class {
   }
 
   async market_cards() {
-    return await splinterlands.Market.load_market_cards(this.card_detail_id, this.gold, this.edition);
+    return await splinterlands.Market.for_sale_by_card(this.card_detail_id, this.gold, this.edition);
   }
 
   static get_combine_result(cards) {

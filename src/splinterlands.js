@@ -1,11 +1,11 @@
 /* eslint-disable no-use-before-define */
-/* global steem, Web3, snapyr, eosjs_ecc, hive_keychain, twttr, steem_keychain, tronWeb */
+/* global splinterlands, steem, Web3, snapyr, eosjs_ecc, hive_keychain, twttr, steem_keychain, tronWeb */
 
 /* eslint-disable prefer-promise-reject-errors */
 /* eslint-disable no-global-assign */
 window.steem = window.hive;
 
-const splinterlands = (function () {
+splinterlands = (function () {
   let _config = {};
   let _player = null;
   let _settings = {};
