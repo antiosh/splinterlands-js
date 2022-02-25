@@ -1,0 +1,28 @@
+{
+  "env": {
+    "browser": true
+  },
+  "extends": ["airbnb-base", "plugin:prettier/recommended"],
+  "plugins": ["prettier"],
+  "ignorePatterns": ["dist/", "libraries/", "publish.js"],
+  "rules": {
+    "prettier/prettier": "error",
+    "arrow-body-style": "off",
+    "prefer-arrow-callback": "off",
+    "curly": ["error", "all"],
+    "camelcase": "off",
+    "no-underscore-dangle": 0,
+    "no-return-await": "off",
+    "no-param-reassign": "off",
+    "eqeqeq": "off",
+    "no-useless-constructor": "off",
+    "prefer-spread": "off",
+    "no-plusplus": "off",
+    "no-return-assign": "off",
+    "no-nested-ternary": "off",
+    "class-methods-use-this": "off",
+    "radix": "off",
+    "no-console": "off",
+    "func-names": "off"
+  }
+}

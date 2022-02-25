@@ -1,0 +1,4 @@
+dist/
+libraries/
+node_modules/
+publish.js

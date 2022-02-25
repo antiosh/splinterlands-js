@@ -1,24 +1,28 @@
+/* global splinterlands */
 splinterlands.Match = class {
-	constructor(data) { this.update(data); }
+  constructor(data) {
+    this.update(data);
+  }
 
-	update(data) {
-		Object.keys(data).forEach(k => this[k] = data[k]);
+  update(data) {
+    Object.keys(data).forEach((k) => (this[k] = data[k]));
 
-		if(this.match_date) {
-			this.inactive = this.inactive.split(',');
-			this.ruleset = this.ruleset.split('|');
-			this.settings = splinterlands.utils.try_parse(this.settings);
-			this.rating_level = this.settings ? this.settings.rating_level : null;
-			this.allowed_cards = this.settings ? this.settings.allowed_cards : null;
-		}
+    if (this.match_date) {
+      this.inactive = this.inactive.split(',');
+      this.ruleset = this.ruleset.split('|');
+      this.settings = splinterlands.utils.try_parse(this.settings);
+      this.rating_level = this.settings ? this.settings.rating_level : null;
+      this.allowed_cards = this.settings ? this.settings.allowed_cards : null;
+    }
 
-		if(this.submit_expiration_date)
-			this.submit_expiration_date = splinterlands.utils.server_date(this.submit_expiration_date, 20);
+    if (this.submit_expiration_date) {
+      this.submit_expiration_date = splinterlands.utils.server_date(this.submit_expiration_date, 20);
+    }
 
-		return this;
-	}
+    return this;
+  }
 
-	get ruleset_images() {
-		return this.ruleset.map(r => splinterlands.utils.asset_url(`website/icons/rulesets/new/img_combat-rule_${r.toLowerCase().replace(/[^a-zA-Z]+/g, '-')}_150.png`));
-	}
-}
+  get ruleset_images() {
+    return this.ruleset.map((r) => splinterlands.utils.asset_url(`website/icons/rulesets/new/img_combat-rule_${r.toLowerCase().replace(/[^a-zA-Z]+/g, '-')}_150.png`));
+  }
+};

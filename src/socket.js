@@ -1,278 +1,299 @@
-if(!window.splinterlands)
-	window.splinterlands = {};
+/* global splinterlands, twttr, snapyr */
 
-window.splinterlands.socket = (function() {
-	let _url = null;
-	let _ws = null;
-	let _ping_interval = null;
-	let _session_id = null;
-	let _connected = false;
+if (!window.splinterlands) {
+  window.splinterlands = {};
+}
 
-	function connect(url, player, token, new_account) {
-		// Make sure we don't already have an open connection
-		if(_ws && _ws.readyState == 1)
-			return;
+window.splinterlands.socket = (function () {
+  let _url = null;
+  let _ws = null;
+  let _ping_interval = null;
+  let _session_id = null;
+  let _connected = false;
+  let _message_handlers;
 
-		if(!_session_id)
-			_session_id = splinterlands.utils.randomStr(10);
+  function on_error(e) {
+    console.log('Socket error...');
+    console.log(e);
+  }
 
-		_url = url;
-		_ws = new WebSocket(_url);
-		console.log('Opening socket connection...');
+  function send(message) {
+    _ws.send(JSON.stringify(message));
+  }
 
-		_ws.onopen = function () {
-			_connected = true;
-			window.dispatchEvent(new CustomEvent('splinterlands:socket_connect', { detail: { url, player, new_account } }));
+  function ping() {
+    send({ type: 'ping' });
+  }
 
-			if(new_account)
-				send({ type: 'new_account', player: player, session_id: _session_id });
-			else
-				send({ type: 'auth', player: player, access_token: token, session_id: _session_id });
-		};
+  function on_close(e) {
+    console.log('Socket closed...');
+    console.log(e);
 
-		_ws.onmessage = on_message;
-		_ws.onerror = on_error;
-		_ws.onclose = on_close;
+    if (_connected) {
+      window.dispatchEvent(new CustomEvent('splinterlands:socket_disconnect', { detail: { e } }));
+    }
 
-		if(_ping_interval)
-			clearInterval(_ping_interval);
+    _connected = false;
 
-		_ping_interval = setInterval(ping, 60 * 1000);
-	}
+    if (splinterlands.get_player()) {
+      // eslint-disable-next-line no-use-before-define
+      setTimeout(() => connect(_url, splinterlands.get_player().name, splinterlands.get_player().token), 1000);
+    }
+  }
 
-	function close() { _ws.close(); }
+  function on_message(m) {
+    console.log(m);
 
-	function on_message(m) {
-		console.log(m);
+    const message = JSON.parse(m.data);
 
-		var message = JSON.parse(m.data);
+    if (message && message.server_time) {
+      splinterlands._server_time_offset = Date.now() - message.server_time;
+    }
 
-		if(message && message.server_time)
-			splinterlands._server_time_offset = Date.now() - message.server_time;
+    if (message.id && _message_handlers[message.id]) {
+      _message_handlers[message.id](message.data);
+    }
 
-		if(message.id && _message_handlers[message.id])
-			_message_handlers[message.id](message.data);
+    // Send acknowledgement if one is requested
+    if (message.ack) {
+      send({ type: 'ack', msg_id: message.msg_id });
+    }
+  }
 
-		// Send acknowledgement if one is requested
-		if(message.ack)
-			send({ type: 'ack', msg_id: message.msg_id });
-	}
+  function connect(url, player, token, new_account) {
+    // Make sure we don't already have an open connection
+    if (_ws && _ws.readyState == 1) {
+      return;
+    }
 
-	function on_error(e) {
-		console.log('Socket error...');
-		console.log(e);
-	}
+    if (!_session_id) {
+      _session_id = splinterlands.utils.randomStr(10);
+    }
 
-	function on_close(e) {
-		console.log('Socket closed...');
-		console.log(e);
+    _url = url;
+    _ws = new WebSocket(_url);
+    console.log('Opening socket connection...');
 
-		if(_connected) 
-			window.dispatchEvent(new CustomEvent('splinterlands:socket_disconnect', { detail: { e } }));
+    _ws.onopen = function () {
+      _connected = true;
+      window.dispatchEvent(new CustomEvent('splinterlands:socket_connect', { detail: { url, player, new_account } }));
 
-		_connected = false;
+      if (new_account) {
+        send({ type: 'new_account', player, session_id: _session_id });
+      } else {
+        send({ type: 'auth', player, access_token: token, session_id: _session_id });
+      }
+    };
 
-		if(splinterlands.get_player())
-			setTimeout(() => connect(_url, splinterlands.get_player().name, splinterlands.get_player().token), 1000);
-	}
+    _ws.onmessage = on_message;
+    _ws.onerror = on_error;
+    _ws.onclose = on_close;
 
-	function send(message) { _ws.send(JSON.stringify(message)); }
-	function ping() { send({ type: 'ping' }); }
+    if (_ping_interval) {
+      clearInterval(_ping_interval);
+    }
 
-	let _message_handlers = {
-		transaction_complete: function(data) {
-			let trx = splinterlands.get_transaction(data.sm_id);
+    _ping_interval = setInterval(ping, 60 * 1000);
+  }
 
-			if(trx) {
-				clearTimeout(trx.timeout);
-				trx.resolve(data);
-			}
-		},
+  function close() {
+    _ws.close();
+  }
 
-		purchase_complete: async function(data) {
-			let trx = splinterlands.get_transaction(data.uid);
+  _message_handlers = {
+    transaction_complete(data) {
+      const trx = splinterlands.get_transaction(data.sm_id);
 
-			if(trx) {
-				clearTimeout(trx.timeout);
-				trx.resolve(data);
-			} else {
-				if(data.type == 'starter_pack') {
-					splinterlands.get_player().starter_pack_purchase = true;
+      if (trx) {
+        clearTimeout(trx.timeout);
+        trx.resolve(data);
+      }
+    },
 
-					splinterlands.utils.loadScript("https://platform.twitter.com/oct.js", () => {
-						twttr.conversion.trackPid('o4d35', { tw_sale_amount: 10, tw_order_quantity: 1 });
-					});
+    async purchase_complete(data) {
+      const trx = splinterlands.get_transaction(data.uid);
 
-					let womplay_id = await splinterlands.get_player().get_womplay_id();
-					if(womplay_id) {
-						await splinterlands.ec_api("/womplay/tracking", { womplay_id, event_name: "purchased_spellbook"  });				
-					}					
-				}
+      if (trx) {
+        clearTimeout(trx.timeout);
+        trx.resolve(data);
+      } else {
+        if (data.type == 'starter_pack') {
+          splinterlands.get_player().starter_pack_purchase = true;
 
-				if(data.type == 'booster_pack') {
-					let womplay_id = await splinterlands.get_player().get_womplay_id();
-					if(womplay_id) {
-						await splinterlands.ec_api("/womplay/tracking", { womplay_id, event_name: "purchased_booster_pack"  });				
-					}			
-				}
-					
-				// TODO: Send starter_purchase event here?
-				snapyr.track(
-					"purchase_complete",
-					{
-						purchase_amount_usd: parseFloat(data.amount_usd),
-						type: data.type
-					}
-				);
+          splinterlands.utils.loadScript('https://platform.twitter.com/oct.js', () => {
+            twttr.conversion.trackPid('o4d35', { tw_sale_amount: 10, tw_order_quantity: 1 });
+          });
 
-				window.dispatchEvent(new CustomEvent('splinterlands:purchase_complete', { detail: data }));
-			}
-		},
+          const womplay_id = await splinterlands.get_player().get_womplay_id();
+          if (womplay_id) {
+            await splinterlands.ec_api('/womplay/tracking', { womplay_id, event_name: 'purchased_spellbook' });
+          }
+        }
 
-		match_found: function(data) {
-			let match = splinterlands.get_match();
+        if (data.type == 'booster_pack') {
+          const womplay_id = await splinterlands.get_player().get_womplay_id();
+          if (womplay_id) {
+            await splinterlands.ec_api('/womplay/tracking', { womplay_id, event_name: 'purchased_booster_pack' });
+          }
+        }
 
-			//(match.id == data.opponent) check is for challenges 
-			if(match && (match.id == data.id || match.id == data.opponent)) {
-				match = splinterlands.set_match(data);
+        // TODO: Send starter_purchase event here?
+        snapyr.track('purchase_complete', {
+          purchase_amount_usd: parseFloat(data.amount_usd),
+          type: data.type,
+        });
 
-				if(match.on_match)
-					match.on_match(match);
-			}
-		},
+        window.dispatchEvent(new CustomEvent('splinterlands:purchase_complete', { detail: data }));
+      }
+    },
 
-		battle_cancelled: function(data) {
-			let match = splinterlands.get_match();
+    match_found(data) {
+      let match = splinterlands.get_match();
 
-			if(match && match.id == data.id) {
-				if(match.on_timeout)
-					match.on_timeout({ error: 'Neither player submitted a team in the allotted time so the match has been cancelled.', code: 'match_cancelled' });
-					
-				splinterlands.set_match(null);
-			}
-		},
+      // (match.id == data.opponent) check is for challenges
+      if (match && (match.id == data.id || match.id == data.opponent)) {
+        match = splinterlands.set_match(data);
 
-		match_not_found: function(data) {
-			let match = splinterlands.get_match();
+        if (match.on_match) {
+          match.on_match(match);
+        }
+      }
+    },
 
-			if(match && match.id == data.id) {
-				if(match.on_timeout)
-					match.on_timeout({ error: 'No suitable opponent could be found, please try again.', code: 'match_not_found' });
+    battle_cancelled(data) {
+      const match = splinterlands.get_match();
 
-				splinterlands.set_match(null);
-			}
-		},
+      if (match && match.id == data.id) {
+        if (match.on_timeout) {
+          match.on_timeout({ error: 'Neither player submitted a team in the allotted time so the match has been cancelled.', code: 'match_cancelled' });
+        }
 
-		battle_result: async function(data) {
-			let match = splinterlands.get_match();
+        splinterlands.set_match(null);
+      }
+    },
 
-			snapyr.track(
-				"battle_result",
-				{
-					match_type: data.match_type,
-					winner: data.winner
-				}
-			);
+    match_not_found(data) {
+      const match = splinterlands.get_match();
 
-			let player = splinterlands.get_player(); 
-			if(player.battles == 0) {
-				let womplay_id = await player.get_womplay_id();
-				if(womplay_id) {
-					await splinterlands.ec_api("/womplay/tracking", { womplay_id, event_name: "completed_first_battle"  });				
-				}
-			}
+      if (match && match.id == data.id) {
+        if (match.on_timeout) {
+          match.on_timeout({ error: 'No suitable opponent could be found, please try again.', code: 'match_not_found' });
+        }
 
-			if(match && match.id == data.id) {
-				if(match.on_result)
-					match.on_result(await splinterlands.Battle.load(data.id))
+        splinterlands.set_match(null);
+      }
+    },
 
-				splinterlands.set_match(null);
-			}
-		},
+    async battle_result(data) {
+      const match = splinterlands.get_match();
 
-		opponent_submit_team: function(data) {
-			let match = splinterlands.get_match();
+      snapyr.track('battle_result', {
+        match_type: data.match_type,
+        winner: data.winner,
+      });
 
-			if(match && match.id == data.id) {
-				match = splinterlands.set_match(data);
+      const player = splinterlands.get_player();
+      if (player.battles == 0) {
+        const womplay_id = await player.get_womplay_id();
+        if (womplay_id) {
+          await splinterlands.ec_api('/womplay/tracking', { womplay_id, event_name: 'completed_first_battle' });
+        }
+      }
 
-				if(match.on_opponent_submit)
-					match.on_opponent_submit(match);
-			}
-		},
+      if (match && match.id == data.id) {
+        if (match.on_result) {
+          match.on_result(await splinterlands.Battle.load(data.id));
+        }
 
-		guild_chat: function(data) {
-			if(data.player_info) {
-				data.player = new splinterlands.Player(data.player_info);
-				delete data['player_info'];
-			}
+        splinterlands.set_match(null);
+      }
+    },
 
-			window.dispatchEvent(new CustomEvent('splinterlands:chat_message', { detail: Object.assign({ type: 'guild' }, data) }));
-		},
+    opponent_submit_team(data) {
+      let match = splinterlands.get_match();
 
-		guild_update: function(data) {
-			window.dispatchEvent(new CustomEvent('splinterlands:guild_update', { detail: data }));
-		},
+      if (match && match.id == data.id) {
+        match = splinterlands.set_match(data);
 
-		global_chat: function(data) {
-			if(data.player_info) {
-				data.player = new splinterlands.Player(data.player_info);
-				delete data['player_info'];
-			}
-			
-			window.dispatchEvent(new CustomEvent('splinterlands:chat_message', { detail: Object.assign({ type: 'global' }, data) }));
-		},
+        if (match.on_opponent_submit) {
+          match.on_opponent_submit(match);
+        }
+      }
+    },
 
-		balance_update: function(data) {
-			let balance = splinterlands.get_player().balances.find(b => b.token == data.token);
+    guild_chat(data) {
+      if (data.player_info) {
+        data.player = new splinterlands.Player(data.player_info);
+        delete data.player_info;
+      }
 
-			// Update the balance record for the current player
-			if(balance)
-				balance.balance = parseFloat(data.balance_end);
-			else
-				splinterlands.get_player().balances.push({ player: data.player, token: data.token, balance: parseFloat(data.balance_end) });
+      window.dispatchEvent(new CustomEvent('splinterlands:chat_message', { detail: { type: 'guild', ...data } }));
+    },
 
-			// Emit a balance_update event
-			window.dispatchEvent(new CustomEvent('splinterlands:balance_update', { detail: data }));
-		},
+    guild_update(data) {
+      window.dispatchEvent(new CustomEvent('splinterlands:guild_update', { detail: data }));
+    },
 
-		rating_update: function(data) {
-			splinterlands.get_player().update_rating(data.new_rating, data.new_league);
-			
-			if(data.new_collection_power !== undefined && splinterlands.get_player().collection_power != data.new_collection_power) {
-				splinterlands.get_player().collection_power = data.new_collection_power;
-				splinterlands.get_player().has_collection_power_changed = true;
-			}
+    global_chat(data) {
+      if (data.player_info) {
+        data.player = new splinterlands.Player(data.player_info);
+        delete data.player_info;
+      }
 
-			// Emit a rating_update event
-			window.dispatchEvent(new CustomEvent('splinterlands:rating_update', { detail: data }));
-		},
+      window.dispatchEvent(new CustomEvent('splinterlands:chat_message', { detail: { type: 'global', ...data } }));
+    },
 
-		quest_progress: function(data) {
-			splinterlands.get_player().quest = new splinterlands.Quest(data);
-			window.dispatchEvent(new CustomEvent('splinterlands:quest_progress', { detail: splinterlands.get_player().quest }));
-		},
+    balance_update(data) {
+      const balance = splinterlands.get_player().balances.find((b) => b.token == data.token);
 
-		received_gifts: function(data) {
-			window.dispatchEvent(new CustomEvent('splinterlands:received_gifts', { detail: data }));
-		},
+      // Update the balance record for the current player
+      if (balance) {
+        balance.balance = parseFloat(data.balance_end);
+      } else {
+        splinterlands.get_player().balances.push({ player: data.player, token: data.token, balance: parseFloat(data.balance_end) });
+      }
 
-		system_message: function(data) {
-			window.dispatchEvent(new CustomEvent('splinterlands:system_message', { detail: data }));
-		},
+      // Emit a balance_update event
+      window.dispatchEvent(new CustomEvent('splinterlands:balance_update', { detail: data }));
+    },
 
-		challenge: function(data) {
-			data.data = JSON.parse(data.data);
-			console.log("Challenge: ", data);
+    rating_update(data) {
+      splinterlands.get_player().update_rating(data.new_rating, data.new_league);
 
-			window.dispatchEvent(new CustomEvent('splinterlands:challenge', { detail: data }));
-		},
+      if (data.new_collection_power !== undefined && splinterlands.get_player().collection_power != data.new_collection_power) {
+        splinterlands.get_player().collection_power = data.new_collection_power;
+        splinterlands.get_player().has_collection_power_changed = true;
+      }
 
-		challenge_declined: function(data) {
-			console.log("challenge_declined: ", data)
-			window.dispatchEvent(new CustomEvent('splinterlands:challenge_declined', { detail: data }));
-		}
-	};
+      // Emit a rating_update event
+      window.dispatchEvent(new CustomEvent('splinterlands:rating_update', { detail: data }));
+    },
 
-	return { connect, close, send };
+    quest_progress(data) {
+      splinterlands.get_player().quest = new splinterlands.Quest(data);
+      window.dispatchEvent(new CustomEvent('splinterlands:quest_progress', { detail: splinterlands.get_player().quest }));
+    },
+
+    received_gifts(data) {
+      window.dispatchEvent(new CustomEvent('splinterlands:received_gifts', { detail: data }));
+    },
+
+    system_message(data) {
+      window.dispatchEvent(new CustomEvent('splinterlands:system_message', { detail: data }));
+    },
+
+    challenge(data) {
+      data.data = JSON.parse(data.data);
+      console.log('Challenge: ', data);
+
+      window.dispatchEvent(new CustomEvent('splinterlands:challenge', { detail: data }));
+    },
+
+    challenge_declined(data) {
+      console.log('challenge_declined: ', data);
+      window.dispatchEvent(new CustomEvent('splinterlands:challenge_declined', { detail: data }));
+    },
+  };
+
+  return { connect, close, send };
 })();

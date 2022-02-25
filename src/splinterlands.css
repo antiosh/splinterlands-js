@@ -24,7 +24,7 @@
 
 .sl-card img.sl-card-img {
   width: 200px;
-} 
+}
 
 /* Start Large Size Cards (300 x 420 px) */
 
@@ -37,7 +37,7 @@
 
 .sl-card.sl-lg img.sl-card-img {
   width: 300px;
-} 
+}
 
 /* End Large Size Cards (300 x 420 px) */
 
@@ -52,7 +52,7 @@
 
 .sl-card.sl-sm img.sl-card-img {
   width: 150px;
-} 
+}
 
 /* End Small Size Cards (300 x 420 px) */
 
@@ -67,7 +67,7 @@
 
 .sl-card.sl-xs img.sl-card-img {
   width: 100px;
-} 
+}
 
 /* End XS Size Cards (300 x 420 px) */
 
@@ -87,15 +87,29 @@
 }
 
 /* Card name backgrounds for alpha edition cards */
-.sl-name-bg-red { background: linear-gradient(#4a0603, #f45f3c); }
-.sl-name-bg-blue { background: linear-gradient(#002e68, #0089f5); }
-.sl-name-bg-green { background: linear-gradient(#013401, #00a30e); }
-.sl-name-bg-white { background: linear-gradient(#1e1e1e, #7b7b7b); }
-.sl-name-bg-black { background: linear-gradient(#310159, #8330e8); }
-.sl-name-bg-gold { background: linear-gradient(#331f54, #8368b0); }
+.sl-name-bg-red {
+  background: linear-gradient(#4a0603, #f45f3c);
+}
+.sl-name-bg-blue {
+  background: linear-gradient(#002e68, #0089f5);
+}
+.sl-name-bg-green {
+  background: linear-gradient(#013401, #00a30e);
+}
+.sl-name-bg-white {
+  background: linear-gradient(#1e1e1e, #7b7b7b);
+}
+.sl-name-bg-black {
+  background: linear-gradient(#310159, #8330e8);
+}
+.sl-name-bg-gold {
+  background: linear-gradient(#331f54, #8368b0);
+}
 
 /* Hide name background for beta edition cards */
-.sl-beta .sl-name-bg { background: transparent; }
+.sl-beta .sl-name-bg {
+  background: transparent;
+}
 
 .sl-name-text {
   font-family: ruba;
@@ -113,17 +127,23 @@
 }
 
 .sl-foil-gold .sl-name-text {
-	width: 80%;
-	text-shadow: 0 0 0.33em black;
+  width: 80%;
+  text-shadow: 0 0 0.33em black;
 }
 
 .sl-beta .sl-name-text {
   top: 68%;
 }
 
-.sl-name-text .sl-sm { font-size: 0.9em; }
-.sl-name-text .sl-xs { font-size: 0.8em; }
-.sl-name-text .sl-xxs { font-size: 0.8em; }
+.sl-name-text .sl-sm {
+  font-size: 0.9em;
+}
+.sl-name-text .sl-xs {
+  font-size: 0.8em;
+}
+.sl-name-text .sl-xxs {
+  font-size: 0.8em;
+}
 
 /* End Card Name */
 
@@ -251,18 +271,18 @@
 }
 
 .sl-abilities {
-	position: absolute;
+  position: absolute;
   top: 77%;
   width: 100%;
-	text-align: center;
+  text-align: center;
 }
 
 .sl-beta .sl-abilities {
-	top: 81.5%;
+  top: 81.5%;
 }
 
 .sl-abilities img {
-	width: 20%;
+  width: 20%;
 }
 
 .sl-summoner-stats {
@@ -275,7 +295,7 @@
 }
 
 .sl-beta .sl-summoner-stats {
-	top: 79.2%;
+  top: 79.2%;
 }
 
 .sl-summoner-stats .sl-stat-magic,
@@ -284,23 +304,23 @@
 .sl-summoner-stats .sl-stat-armor,
 .sl-summoner-stats .sl-stat-health,
 .sl-summoner-stats .sl-stat-speed {
-	position: relative;
-	top: auto;
-	left: auto;
-	margin: 0 3px;
+  position: relative;
+  top: auto;
+  left: auto;
+  margin: 0 3px;
 }
 
 .sl-summoner-stats .sl-stat-text {
-	position: absolute;
-	top: 20%;
-	width: 100%;
-	left: -17%;
-	font-size: 1.7em;
+  position: absolute;
+  top: 20%;
+  width: 100%;
+  left: -17%;
+  font-size: 1.7em;
 }
 
 .sl-summoner-stats .sl-stat-speed .sl-stat-text {
-	top: 16%;
-	left: -30%;
+  top: 16%;
+  left: -30%;
 }
 
 /* End Card Stats */
