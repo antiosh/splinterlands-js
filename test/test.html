@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Mocha Tests</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="https://unpkg.com/mocha/mocha.css" />
+  </head>
+  <body>
+    <div id="mocha"></div>
+
+    <script src="https://unpkg.com/chai/chai.js"></script>
+    <script src="https://unpkg.com/mocha/mocha.js"></script>
+
+    <!-- <script src="../dist/splinterlands.min.js"></script> -->
+    <script src="../libraries/eosjs-ecc.min.js"></script> 
+    <script src="../libraries/web3.min.js"></script> 
+    <script src="../libraries/hive.min.js"></script> 
+    <script src="../libraries/md5.min.js"></script> 
+    <script src="../src/splinterlands.js"></script> 
+    <script src="../src/utils.js"></script> 
+    <script src="../src/socket.js"></script> 
+    <script src="../src/classes/card.js"></script> 
+    <script src="../src/classes/league.js"></script> 
+    <script src="../src/classes/guild.js"></script> 
+    <script src="../src/classes/player_settings.js"></script> 
+    <script src="../src/classes/player.js"></script> 
+    <script src="../src/classes/quest.js"></script> 
+    <script src="../src/classes/potion.js"></script> 
+    <script src="../src/classes/card_details.js"></script> 
+    <script src="../src/classes/guild_building.js"></script> 
+    <script src="../src/classes/store.js"></script> 
+    <script src="../src/classes/battle.js"></script> 
+    <script src="../src/classes/transaction.js"></script> 
+    <script src="../src/classes/match.js"></script> 
+    <script src="../src/classes/battle_card.js"></script> 
+    <script src="../src/classes/reward_item.js"></script> 
+    <script src="../src/classes/season.js"></script> 
+    <script src="../src/classes/market.js"></script> 
+    <script src="../src/ops.js"></script> 
+    <script src="../src/blockchain/tron.js"></script> 
+    <script src="../src/blockchain/ethereum.js"></script> 
+    <script src="../src/blockchain/eos.js"></script> 
+
+    <script class="mocha-init">
+      mocha.setup('bdd');
+      mocha.checkLeaks();
+    </script>
+    <script src="quest.test.js"></script>
+    <script class="mocha-exec">
+      mocha.run();
+    </script>
+  </body>
+</html>
