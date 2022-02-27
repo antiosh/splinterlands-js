@@ -1,10 +1,7 @@
-/* global splinterlands, ScatterEOS */
-if (!window.splinterlands) {
-  window.splinterlands = {};
-}
+/* global ScatterEOS */
+import utils from '../utils';
 
-// eslint-disable-next-line func-names
-window.splinterlands.eos = (function () {
+const eos = (function () {
   const config = {
     scatter: {
       name: 'splinterlands.io',
@@ -29,9 +26,9 @@ window.splinterlands.eos = (function () {
       }
 
       try {
-        await splinterlands.utils.loadScriptAsync('https://d36mxiodymuqjm.cloudfront.net/libraries/eos/scatterjs-core.min.js');
-        await splinterlands.utils.loadScriptAsync('https://d36mxiodymuqjm.cloudfront.net/libraries/eos/scatterjs-plugin-eosjs.min.js');
-        await splinterlands.utils.loadScriptAsync('https://d36mxiodymuqjm.cloudfront.net/libraries/eos/eos.min.js');
+        await utils.loadScriptAsync('https://d36mxiodymuqjm.cloudfront.net/libraries/eos/scatterjs-core.min.js');
+        await utils.loadScriptAsync('https://d36mxiodymuqjm.cloudfront.net/libraries/eos/scatterjs-plugin-eosjs.min.js');
+        await utils.loadScriptAsync('https://d36mxiodymuqjm.cloudfront.net/libraries/eos/eos.min.js');
 
         window.ScatterJS.plugins(new ScatterEOS());
         scatterConn = window.ScatterJS;
@@ -76,9 +73,9 @@ window.splinterlands.eos = (function () {
       const account = await getScatterIdentity(config.scatter.eos_network, 'eos');
       const network = scatterConn.Network.fromJson(config.scatter.eos_network);
 
-      const eos = scatterConn.eos(network, window.Eos);
+      const eosConn = scatterConn.eos(network, window.Eos);
       const transactionOptions = { authorization: [`${account.name}@${account.authority}`] };
-      return await eos.transfer(account.name, to, `${parseFloat(amount).toFixed(4)} EOS`, memo, transactionOptions);
+      return await eosConn.transfer(account.name, to, `${parseFloat(amount).toFixed(4)} EOS`, memo, transactionOptions);
     } catch (err) {
       return { error: err };
     }
@@ -152,3 +149,5 @@ window.splinterlands.eos = (function () {
 
   return { getIdentity, hasIdentity, scatterAuth, scatterPay };
 })();
+
+export default eos;

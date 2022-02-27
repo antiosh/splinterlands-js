@@ -1,11 +1,15 @@
-/* global splinterlands */
-splinterlands.Season = class {
+import ops from '../ops';
+import League from './league';
+
+class Season {
   constructor(data) {
     Object.keys(data).forEach((k) => (this[k] = data[k]));
-    this.league = new splinterlands.League(this.max_rating, this.max_league);
+    this.league = new League(this.max_rating, this.max_league);
   }
 
   async claim_rewards() {
-    return splinterlands.ops.claim_season_rewards(this.season);
+    return ops.claim_season_rewards(this.season);
   }
-};
+}
+
+export default Season;

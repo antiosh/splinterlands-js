@@ -1,5 +1,8 @@
-/* global splinterlands */
-splinterlands.League = class {
+import settingsModule from '../modules/settings';
+
+const { get_settings } = settingsModule;
+
+class League {
   constructor(rating, league_id) {
     this.id = league_id;
     this.rating = rating || this.min_rating;
@@ -94,7 +97,7 @@ splinterlands.League = class {
   }
 
   get min_power() {
-    return splinterlands.get_settings().leagues[this.id].min_power;
+    return get_settings().leagues[this.id].min_power;
   }
 
   get max_power() {
@@ -102,11 +105,11 @@ splinterlands.League = class {
       return -1;
     }
 
-    return splinterlands.get_settings().leagues[this.id + 1].min_power;
+    return get_settings().leagues[this.id + 1].min_power;
   }
 
   get rating_reset() {
-    return splinterlands.get_settings().leagues[this.id].season_rating_reset;
+    return get_settings().leagues[this.id].season_rating_reset;
   }
 
   get level_limits() {
@@ -114,17 +117,19 @@ splinterlands.League = class {
   }
 
   get season_rewards() {
-    return parseInt(splinterlands.get_settings().season.reward_packs[this.id]);
+    return parseInt(get_settings().season.reward_packs[this.id]);
   }
 
   static list() {
-    return [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].map((r) => new splinterlands.League(null, r));
+    return [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].map((r) => new League(null, r));
   }
 
   get is_max_league() {
     if (this.id == null) {
-      return this.old_id >= splinterlands.get_settings().leagues.length - 1;
+      return this.old_id >= get_settings().leagues.length - 1;
     }
-    return this.id >= splinterlands.get_settings().leagues.length - 1;
+    return this.id >= get_settings().leagues.length - 1;
   }
-};
+}
+
+export default League;

@@ -1,9 +1,7 @@
-/* global ethereum, Web3 */
-if (!window.splinterlands) {
-  window.splinterlands = {};
-}
+/* global ethereum */
+import Web3 from 'web3';
 
-window.splinterlands.bsc = (function () {
+const bsc = (function () {
   async function web3connect() {
     if (!window.ethereum) {
       return null;
@@ -317,3 +315,5 @@ window.splinterlands.bsc = (function () {
 
   return { bscDeposit };
 })();
+
+export default bsc;

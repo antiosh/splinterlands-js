@@ -1,6 +1,19 @@
-/* global splinterlands, snapyr, paypal */
-/* eslint-disable max-classes-per-file */
-splinterlands.Store = class {
+/* global snapyr, paypal */
+import utils from '../utils';
+import splinterlandsUtils from '../splinterlands_utils';
+import ethereum from '../blockchain/ethereum';
+import tron from '../blockchain/tron';
+import Potion from './potion';
+import Purchase from './purchase';
+import api, { ec_api, api_post } from '../modules/api';
+import log_event from '../modules/log_event';
+import settingsModule from '../modules/settings';
+import playerModule from '../modules/player';
+import mobileAppModule from '../modules/mobile_app';
+
+const { get_settings } = settingsModule;
+
+class Store {
   static get payment_tokens() {
     const currencies = [
       { name: 'HIVE', symbol: 'HIVE' },
@@ -16,7 +29,7 @@ splinterlands.Store = class {
       { name: 'Electroneum', symbol: 'ETN' },
     ];
 
-    if (splinterlands.ethereum.hasWeb3Obj()) {
+    if (ethereum.hasWeb3Obj()) {
       currencies.push({ name: 'Basic Attention Token', symbol: 'BAT' });
       currencies.push({ name: 'Enjin Coin', symbol: 'ENJ' });
       currencies.push({ name: 'Uniswap', symbol: 'UNI' });
@@ -30,7 +43,7 @@ splinterlands.Store = class {
 
   static async get_available_packs(edition) {
     try {
-      const { packs } = await splinterlands.api('/purchases/stats');
+      const { packs } = await api('/purchases/stats');
       return packs.find((p) => p.edition == edition).available;
     } catch (err) {
       return 0;
@@ -38,19 +51,19 @@ splinterlands.Store = class {
   }
 
   static get booster_price() {
-    return splinterlands.get_settings().booster_pack_price;
+    return get_settings().booster_pack_price;
   }
 
   static get starter_price() {
-    return splinterlands.get_settings().starter_pack_price;
+    return get_settings().starter_pack_price;
   }
 
   static get orb_price() {
-    return splinterlands.get_settings().dec.orb_cost;
+    return get_settings().dec.orb_cost;
   }
 
   static get dice_price() {
-    return splinterlands.get_settings().dec.dice_cost;
+    return get_settings().dec.dice_cost;
   }
 
   static pack_purchase_info(edition, qty) {
@@ -59,8 +72,8 @@ splinterlands.Store = class {
         edition,
         qty,
         bonus: Math.floor(qty >= 500 ? qty * 0.15 : qty >= 100 ? qty * 0.1 : 0),
-        total_usd: +(qty * splinterlands.Store.booster_price).toFixed(2),
-        total_dec: Math.floor(qty * splinterlands.Store.booster_price * 1000),
+        total_usd: +(qty * Store.booster_price).toFixed(2),
+        total_dec: Math.floor(qty * Store.booster_price * 1000),
       };
     }
     if (edition == 2) {
@@ -68,8 +81,8 @@ splinterlands.Store = class {
         edition,
         qty,
         bonus: Math.floor(qty >= 100 ? qty * 0.1 : qty >= 20 ? qty * 0.05 : 0),
-        total_usd: +((qty * splinterlands.Store.orb_price) / 1000).toFixed(2),
-        total_dec: Math.floor(splinterlands.utils.guild_discounted_cost(qty * splinterlands.Store.orb_price)),
+        total_usd: +((qty * Store.orb_price) / 1000).toFixed(2),
+        total_dec: Math.floor(splinterlandsUtils.guild_discounted_cost(qty * Store.orb_price)),
       };
     }
     if (edition == 5) {
@@ -77,8 +90,8 @@ splinterlands.Store = class {
         edition,
         qty,
         bonus: Math.floor(qty >= 100 ? qty * 0.1 : qty >= 20 ? qty * 0.05 : 0),
-        total_usd: +((qty * splinterlands.Store.dice_price) / 1000).toFixed(2),
-        total_dec: Math.floor(splinterlands.utils.guild_discounted_cost(qty * splinterlands.Store.dice_price)),
+        total_usd: +((qty * Store.dice_price) / 1000).toFixed(2),
+        total_dec: Math.floor(splinterlandsUtils.guild_discounted_cost(qty * Store.dice_price)),
       };
     }
 
@@ -86,7 +99,7 @@ splinterlands.Store = class {
   }
 
   static potion_purchase_info(type, qty) {
-    const potion = splinterlands.Potion.get_potion(type);
+    const potion = Potion.get_potion(type);
 
     if (!potion) {
       return { error: 'Invalid potion type specified.' };
@@ -121,7 +134,7 @@ splinterlands.Store = class {
       { name: 'EOS', symbol: 'EOS' },
     ];
 
-    if (splinterlands.ethereum.hasWeb3Obj()) {
+    if (ethereum.hasWeb3Obj()) {
       currencies.push({ name: 'Basic Attention Token', symbol: 'BAT' });
       currencies.push({ name: 'Enjin Coin', symbol: 'ENJ' });
       currencies.push({ name: 'Uniswap', symbol: 'UNI' });
@@ -135,7 +148,7 @@ splinterlands.Store = class {
 
   static async start_purchase(type, qty, currency, merchant, data, purchase_origin) {
     let orig_currency = currency;
-    const player = splinterlands.get_player() ? splinterlands.get_player().name : '';
+    const player = playerModule.get_player() ? playerModule.get_player().name : '';
 
     if (!['HIVE', 'HBD', 'DEC'].includes(currency)) {
       currency = 'HIVE';
@@ -146,10 +159,11 @@ splinterlands.Store = class {
     }
 
     console.log('orig_currency: ', orig_currency);
+    const mobileAppSettings = mobileAppModule.get_mobile_settings();
     if (!purchase_origin) {
-      if (splinterlands.is_mobile_app && splinterlands.mobile_OS === 'android') {
+      if (mobileAppSettings.is_mobile_app && mobileAppSettings.mobile_OS === 'android') {
         purchase_origin = 'google';
-      } else if (splinterlands.is_mobile_app && splinterlands.mobile_OS === 'iOS') {
+      } else if (mobileAppSettings.is_mobile_app && mobileAppSettings.mobile_OS === 'iOS') {
         purchase_origin = 'apple';
       } else {
         purchase_origin = 'crypto';
@@ -166,8 +180,8 @@ splinterlands.Store = class {
       params.data = data;
     }
 
-    if (splinterlands.is_mobile_app) {
-      params.app = splinterlands.mobile_OS;
+    if (mobileAppSettings.is_mobile_app) {
+      params.app = mobileAppSettings.mobile_OS;
     }
 
     if (purchase_origin == 'apple' && (type == 'credits' || type == 'starter_pack')) {
@@ -191,15 +205,15 @@ splinterlands.Store = class {
       merchant,
     });
 
-    return new splinterlands.Purchase(await splinterlands.api('/purchases/start', params));
+    return new Purchase(await api('/purchases/start', params));
   }
 
   static async airdrop_info(edition) {
     if (!edition) {
       edition = 4;
     }
-    const purchases = await splinterlands.api('/players/pack_purchases', { edition });
-    const available = await splinterlands.Store.get_available_packs(edition);
+    const purchases = await api('/players/pack_purchases', { edition });
+    const available = await Store.get_available_packs(edition);
 
     if (edition === 5) {
       return {
@@ -217,7 +231,7 @@ splinterlands.Store = class {
 
   static async paypal_button(type, get_qty) {
     if (!window.paypal) {
-      await splinterlands.utils.loadScriptAsync(`https://www.paypal.com/sdk/js?client-id=${splinterlands.get_settings().paypal_client_id}&disable-funding=credit`);
+      await utils.loadScriptAsync(`https://www.paypal.com/sdk/js?client-id=${get_settings().paypal_client_id}&disable-funding=credit`);
     }
 
     return paypal.Buttons({
@@ -230,7 +244,7 @@ splinterlands.Store = class {
         display: 'paypal',
       },
       async createOrder(data, actions) {
-        const purchaseInfo = await splinterlands.Store.start_purchase(type, get_qty(), 'USD', null, null, 'paypal');
+        const purchaseInfo = await Store.start_purchase(type, get_qty(), 'USD', null, null, 'paypal');
 
         if (purchaseInfo.code === 'verification_needed') {
           window.dispatchEvent(
@@ -257,8 +271,8 @@ splinterlands.Store = class {
               amount: {
                 value: purchaseInfo.amount_usd,
                 payee: {
-                  email_address: splinterlands.get_settings().paypal_acct,
-                  merchant_id: splinterlands.get_settings().paypal_merchant_id,
+                  email_address: get_settings().paypal_acct,
+                  merchant_id: get_settings().paypal_merchant_id,
                 },
               },
             },
@@ -269,7 +283,7 @@ splinterlands.Store = class {
         console.log(err);
       },
       onApprove(data, actions) {
-        splinterlands.log_event('paypal_purchase', data);
+        log_event('paypal_purchase', data);
 
         return actions.order
           .capture()
@@ -277,7 +291,7 @@ splinterlands.Store = class {
             const refID = details.purchase_units[0].reference_id;
             const { orderID } = data;
 
-            const result = await splinterlands.api('/purchases/paypal', { uid: refID, tx: orderID });
+            const result = await api('/purchases/paypal', { uid: refID, tx: orderID });
 
             if (result && !result.error) {
               window.dispatchEvent(new CustomEvent('splinterlands:purchase_approved', { detail: result }));
@@ -285,14 +299,14 @@ splinterlands.Store = class {
 
             return result;
           })
-          .catch((err) => splinterlands.log_event('paypal_failed', { err, ...data }));
+          .catch((err) => log_event('paypal_failed', { err, ...data }));
       },
     });
   }
 
   static async check_code(code) {
     code = code.toUpperCase();
-    const result = await splinterlands.api('/purchases/check_code', { code });
+    const result = await api('/purchases/check_code', { code });
 
     if (!result || !result.valid) {
       return result;
@@ -302,7 +316,7 @@ splinterlands.Store = class {
       return { error: 'The specified promo code is not currently supported in the mobile app, please try the desktop site.' };
     }
 
-    if (result.type == 'starter_pack' && splinterlands.get_player().starter_pack_purchase) {
+    if (result.type == 'starter_pack' && playerModule.get_player().starter_pack_purchase) {
       return { error: `This promo code is for a Summoner's Spellbook which has already been purchased for this account.` };
     }
 
@@ -315,13 +329,13 @@ splinterlands.Store = class {
 
   static async redeem_code(code) {
     if (typeof code === 'string') {
-      code = await splinterlands.api('/purchases/check_code', { code: code.toUpperCase() });
+      code = await api('/purchases/check_code', { code: code.toUpperCase() });
     }
 
     switch (code.type) {
       case 'starter_pack': {
-        const purchase = await splinterlands.Store.start_purchase('starter_pack', 1, 'PROMO');
-        return await splinterlands.api('/purchases/start_code', { code: code.code, purchase_id: purchase.uid });
+        const purchase = await Store.start_purchase('starter_pack', 1, 'PROMO');
+        return await api('/purchases/start_code', { code: code.code, purchase_id: purchase.uid });
       }
       default:
         return { error: 'The specified promo code is not currently supported.' };
@@ -335,15 +349,15 @@ splinterlands.Store = class {
         switch (wallet_type) {
           case 'steem_engine':
           case 'hive_engine':
-            resolve({ address: splinterlands.get_settings().account, browser_payment_available: true });
+            resolve({ address: get_settings().account, browser_payment_available: true });
             break;
           case 'tron': {
-            const address = await splinterlands.ec_api('/purchases/get_payment_address', { type: 'dec_deposit', currency: 'TRX', data: '' });
-            resolve({ address: address.wallet_address, browser_payment_available: splinterlands.tron.browser_payment_available() });
+            const address = await ec_api('/purchases/get_payment_address', { type: 'dec_deposit', currency: 'TRX', data: '' });
+            resolve({ address: address.wallet_address, browser_payment_available: tron.browser_payment_available() });
             break;
           }
           case 'ethereum':
-            resolve({ address: splinterlands.get_settings().ethereum.contracts.crystals.address, browser_payment_available: false });
+            resolve({ address: get_settings().ethereum.contracts.crystals.address, browser_payment_available: false });
             break;
           case 'bsc':
             resolve({ address: '0xe9d7023f2132d55cbd4ee1f78273cb7a3e74f10a', browser_payment_available: false });
@@ -360,41 +374,42 @@ splinterlands.Store = class {
   }
 
   static async mobile_validate(product_id, uid, purchase_token) {
-    splinterlands.log_event('mobile_purchase', { product_id, uid, purchase_token });
+    log_event('mobile_purchase', { product_id, uid, purchase_token });
 
-    const result = await splinterlands.api('/purchases/mobilepurchase', { product_id, uid, purchase_token });
+    const result = await api('/purchases/mobilepurchase', { product_id, uid, purchase_token });
 
     if (result && !result.error) {
       window.dispatchEvent(new CustomEvent('splinterlands:purchase_approved', { detail: result }));
 
       return result;
     }
-    splinterlands.log_event('mobile_purchase_failed', { result });
+    log_event('mobile_purchase_failed', { result });
 
     return result;
   }
 
   static async iOS_validate(product_id, uid, receipt_data) {
     // Apple's receipt data is too large for a query string to handle
-    splinterlands.log_event('mobile_purchase_ios', { product_id, uid, receipt_data: encodeURIComponent(`${receipt_data.substr(0, 50)}...`) });
+    log_event('mobile_purchase_ios', { product_id, uid, receipt_data: encodeURIComponent(`${receipt_data.substr(0, 50)}...`) });
 
     const query = { product_id, uid };
 
-    const result = await splinterlands.api_post(`/purchases/iospurchase?${splinterlands.utils.param(query)}`, { 'receipt-data': receipt_data });
+    const result = await api_post(`/purchases/iospurchase?${utils.param(query)}`, { 'receipt-data': receipt_data });
 
     if (result && !result.error) {
       window.dispatchEvent(new CustomEvent('splinterlands:purchase_approved', { detail: result }));
 
       return result;
     }
-    splinterlands.log_event('mobile_purchase_failed_ios', { result });
+    log_event('mobile_purchase_failed_ios', { result });
 
     return result;
   }
 
   // eslint-disable-next-line consistent-return
   static async restore_iap(product_id, purchase_token) {
-    if (splinterlands.is_mobile_app) {
+    const mobileAppSettings = mobileAppModule.get_mobile_settings();
+    if (mobileAppSettings.is_mobile_app) {
       return new Promise(function (resolve) {
         // Have to wait for home screen/news to finish loading
         setTimeout(resolve, 2000);
@@ -431,11 +446,11 @@ splinterlands.Store = class {
             return;
         }
 
-        const purchase = await splinterlands.Store.start_purchase(product_type, qty, 'USD');
-        const validate = await splinterlands.Store.mobile_validate(product_id, purchase.uid, purchase_token);
+        const purchase = await Store.start_purchase(product_type, qty, 'USD');
+        const validate = await Store.mobile_validate(product_id, purchase.uid, purchase_token);
 
         if (!validate.error) {
-          if (splinterlands.mobile_OS === 'android') {
+          if (mobileAppSettings.mobile_OS === 'android') {
             window.BlockHandler.purchaseVerified(purchase_token, true);
           }
         } else {
@@ -445,10 +460,6 @@ splinterlands.Store = class {
     }
     console.log('ERROR: Trying to restore non mobile IAP');
   }
-};
+}
 
-splinterlands.Purchase = class {
-  constructor(data) {
-    Object.keys(data).forEach((k) => (this[k] = data[k]));
-  }
-};
+export default Store;

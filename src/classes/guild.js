@@ -1,13 +1,19 @@
-/* global splinterlands */
-splinterlands.Guild = class {
+import utils from '../utils';
+import GuildBuilding from './guild_building';
+import api from '../modules/api';
+import settingsModule from '../modules/settings';
+
+const { get_settings } = settingsModule;
+
+class Guild {
   _init(data) {
     Object.keys(data).forEach((k) => (this[k] = data[k]));
 
-    this.data = splinterlands.utils.try_parse(data.data);
-    const buildings = splinterlands.utils.try_parse(data.buildings);
+    this.data = utils.try_parse(data.data);
+    const buildings = utils.try_parse(data.buildings);
 
     if (buildings) {
-      this.buildings = Object.keys(buildings).map((k) => new splinterlands.GuildBuilding(this.id, k, buildings[k]));
+      this.buildings = Object.keys(buildings).map((k) => new GuildBuilding(this.id, k, buildings[k]));
     }
 
     this.crest = this.data ? this.data.crest : {};
@@ -30,15 +36,15 @@ splinterlands.Guild = class {
       language = '';
     }
 
-    return (await splinterlands.api('/guilds/list', { name, membership_type, language })).map((g) => new splinterlands.Guild(g));
+    return (await api('/guilds/list', { name, membership_type, language })).map((g) => new Guild(g));
   }
 
   static async find(id) {
-    return new splinterlands.Guild(await splinterlands.api('/guilds/find', { id }));
+    return new Guild(await api('/guilds/find', { id }));
   }
 
   get max_members() {
-    return splinterlands.get_settings().guilds.guild_hall.member_limit[this.level - 1];
+    return get_settings().guilds.guild_hall.member_limit[this.level - 1];
   }
 
   get_building(type) {
@@ -60,12 +66,12 @@ splinterlands.Guild = class {
   }
 
   async get_members() {
-    return await splinterlands.api('/guilds/members', { guild_id: this.id });
+    return await api('/guilds/members', { guild_id: this.id });
   }
 
   async get_chat() {
-    const history = await splinterlands.api('/players/chat_history', { guild_id: this.id });
-    history.forEach((h) => (h.player = new splinterlands.Player(h.player)));
+    const history = await api('/players/chat_history', { guild_id: this.id });
+    // history.forEach((h) => (h.player = new splinterlands.Player(h.player)));
     return history;
   }
 
@@ -109,7 +115,7 @@ splinterlands.Guild = class {
       return 0;
     }
 
-    return splinterlands.get_settings().guilds.shop_discount_pct[this.quest_lodge_level - 1];
+    return get_settings().guilds.shop_discount_pct[this.quest_lodge_level - 1];
   }
 
   async post_announcement(subject, message, is_private) {
@@ -119,15 +125,17 @@ splinterlands.Guild = class {
       message,
       is_private,
     };
-    return splinterlands.api('/guilds/post_announcement', data);
+    return api('/guilds/post_announcement', data);
   }
 
   async refresh() {
-    const data = await splinterlands.Guild.find(this.id);
+    const data = await Guild.find(this.id);
     this._init(data);
   }
 
   static async delete_announcement(announcement_id) {
-    return splinterlands.api('/guilds/delete_announcement', { id: announcement_id });
+    return api('/guilds/delete_announcement', { id: announcement_id });
   }
-};
+}
+
+export default Guild;

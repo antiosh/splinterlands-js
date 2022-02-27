@@ -1,5 +1,9 @@
-/* global splinterlands */
-splinterlands.GuildBuilding = class {
+import api from '../modules/api';
+import settingsModule from '../modules/settings';
+
+const { get_settings } = settingsModule;
+
+class GuildBuilding {
   constructor(guild_id, type, data) {
     this.type = type;
     this.guild_id = guild_id;
@@ -7,13 +11,11 @@ splinterlands.GuildBuilding = class {
   }
 
   async get_contributions() {
-    return await splinterlands.api('/guilds/contributions', { guild_id: this.guild_id, type: this.type });
+    return await api('/guilds/contributions', { guild_id: this.guild_id, type: this.type });
   }
 
   get to_next_level() {
-    const levels = splinterlands.get_settings().guilds[this.type].levels
-      ? splinterlands.get_settings().guilds[this.type].levels
-      : splinterlands.get_settings().guilds[this.type].cost[0].levels;
+    const levels = get_settings().guilds[this.type].levels ? get_settings().guilds[this.type].levels : get_settings().guilds[this.type].cost[0].levels;
 
     if (this.level == 10) {
       return {
@@ -23,7 +25,7 @@ splinterlands.GuildBuilding = class {
       };
     }
 
-    const levels_crowns = splinterlands.get_settings().guilds[this.type].levels ? [] : splinterlands.get_settings().guilds[this.type].cost[1].levels;
+    const levels_crowns = get_settings().guilds[this.type].levels ? [] : get_settings().guilds[this.type].cost[1].levels;
     let total_to_level = 0;
     let total_to_level_crowns = 0;
 
@@ -36,14 +38,14 @@ splinterlands.GuildBuilding = class {
       total: levels[this.level],
       progress: 'contributions' in this ? this.contributions - total_to_level : this.contrib_dec - total_to_level,
       remaining: 'contributions' in this ? total_to_level + levels[this.level] - this.contributions : Math.max(total_to_level + levels[this.level] - this.contrib_dec, 0),
-      crowns_total: 'contributions' in this ? 0 : splinterlands.get_settings().guilds[this.type].cost[1].levels[this.level],
+      crowns_total: 'contributions' in this ? 0 : get_settings().guilds[this.type].cost[1].levels[this.level],
       crowns_progress: 'contributions' in this ? 0 : this.contrib_crowns - total_to_level_crowns,
       crowns_remaining: 'contributions' in this ? 0 : Math.max(total_to_level_crowns + levels_crowns[this.level] - this.contrib_crowns, 0),
     };
   }
 
   get symbol() {
-    return splinterlands.get_settings().guilds[this.type].symbol;
+    return get_settings().guilds[this.type].symbol;
   }
 
   // eslint-disable-next-line
@@ -54,7 +56,7 @@ splinterlands.GuildBuilding = class {
 
     switch (this.type) {
       case 'guild_hall':
-        bldg = splinterlands.get_settings().guilds[this.type];
+        bldg = get_settings().guilds[this.type];
         bonus1 = bldg.member_limit;
         bonus2 = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
@@ -67,9 +69,9 @@ splinterlands.GuildBuilding = class {
           };
         });
       case 'quest_lodge':
-        bldg = splinterlands.get_settings().guilds[this.type];
-        bonus1 = splinterlands.get_settings().guilds.dec_bonus_pct;
-        bonus2 = splinterlands.get_settings().guilds.shop_discount_pct;
+        bldg = get_settings().guilds[this.type];
+        bonus1 = get_settings().guilds.dec_bonus_pct;
+        bonus2 = get_settings().guilds.shop_discount_pct;
 
         return bldg.levels.map((l, i) => {
           return {
@@ -81,12 +83,12 @@ splinterlands.GuildBuilding = class {
         });
       case 'arena': {
         // tier can range from 0 to 4 (corresponding to building levels 1&2, 3&4, 5&6, 7&8, 9&10)
-        const dec_cost_levels = splinterlands.get_settings().guilds.arena.cost[0].levels;
-        const crown_cost_levels = splinterlands.get_settings().guilds.arena.cost[1].levels;
+        const dec_cost_levels = get_settings().guilds.arena.cost[0].levels;
+        const crown_cost_levels = get_settings().guilds.arena.cost[1].levels;
 
         bonus1 = [1, 1, 2, 2, 3, 3, 4, 4, 5, 5];
-        bonus2 = splinterlands.get_settings().frays;
-        const bonus3 = splinterlands.get_settings().guilds.crown_multiplier;
+        bonus2 = get_settings().frays;
+        const bonus3 = get_settings().guilds.crown_multiplier;
 
         return dec_cost_levels.map((l, i) => {
           const arena_tier = Math.ceil((i + 1) / 2) - 1;
@@ -102,8 +104,8 @@ splinterlands.GuildBuilding = class {
       }
       case 'barracks': {
         // tier can range from 0 to 4 (corresponding to building levels 1&2, 3&4, 5&6, 7&8, 9&10)
-        const dec_barracks_cost_levels = splinterlands.get_settings().guilds.barracks.cost[0].levels;
-        const crown_barracks_cost_levels = splinterlands.get_settings().guilds.barracks.cost[1].levels;
+        const dec_barracks_cost_levels = get_settings().guilds.barracks.cost[0].levels;
+        const crown_barracks_cost_levels = get_settings().guilds.barracks.cost[1].levels;
 
         const perks_names = ['Advantage', 'Unleash I', 'Banish I', 'Surge I', 'Unleash II', 'Banish II', 'Unleash III', 'Surge II', 'Ambush', 'Unleash IV'];
         const perks_desc = [
@@ -131,11 +133,11 @@ splinterlands.GuildBuilding = class {
         });
       }
       case 'guild_shop': {
-        bonus1 = splinterlands.get_settings().guilds.merit_multiplier;
-        const { guild_store_items } = splinterlands.get_settings();
+        bonus1 = get_settings().guilds.merit_multiplier;
+        const { guild_store_items } = get_settings();
 
-        const dec_shop_cost_levels = splinterlands.get_settings().guilds.guild_shop.cost[0].levels;
-        const crown_shop_cost_levels = splinterlands.get_settings().guilds.guild_shop.cost[1].levels;
+        const dec_shop_cost_levels = get_settings().guilds.guild_shop.cost[0].levels;
+        const crown_shop_cost_levels = get_settings().guilds.guild_shop.cost[1].levels;
 
         return dec_shop_cost_levels.map((l, i) => {
           const items = guild_store_items.filter((item) => item.unlock_level === i + 1);
@@ -161,4 +163,6 @@ splinterlands.GuildBuilding = class {
   get image_url() {
     return `https://d36mxiodymuqjm.cloudfront.net/website/guilds/bldg/buildings/bldg_guild_${this.type}-${this.level}-v2.png`;
   }
-};
+}
+
+export default GuildBuilding;

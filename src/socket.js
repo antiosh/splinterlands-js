@@ -1,10 +1,16 @@
-/* global splinterlands, twttr, snapyr */
+/* global twttr, snapyr */
 
-if (!window.splinterlands) {
-  window.splinterlands = {};
-}
+import utils from './utils';
+import splinterlandsUtils from './splinterlands_utils';
+import playerModule from './modules/player';
+import matchModule from './modules/match';
+import transactionsModule from './modules/transactions';
+import { ec_api } from './modules/api';
+import Battle from './classes/battle';
+import Player from './classes/player';
+import Quest from './classes/quest';
 
-window.splinterlands.socket = (function () {
+export const socket = (function () {
   let _url = null;
   let _ws = null;
   let _ping_interval = null;
@@ -35,9 +41,9 @@ window.splinterlands.socket = (function () {
 
     _connected = false;
 
-    if (splinterlands.get_player()) {
+    if (playerModule.get_player()) {
       // eslint-disable-next-line no-use-before-define
-      setTimeout(() => connect(_url, splinterlands.get_player().name, splinterlands.get_player().token), 1000);
+      setTimeout(() => connect(_url, playerModule.get_player().name, playerModule.get_player().token), 1000);
     }
   }
 
@@ -47,7 +53,7 @@ window.splinterlands.socket = (function () {
     const message = JSON.parse(m.data);
 
     if (message && message.server_time) {
-      splinterlands._server_time_offset = Date.now() - message.server_time;
+      splinterlandsUtils.set_server_time_offset(Date.now() - message.server_time);
     }
 
     if (message.id && _message_handlers[message.id]) {
@@ -67,7 +73,7 @@ window.splinterlands.socket = (function () {
     }
 
     if (!_session_id) {
-      _session_id = splinterlands.utils.randomStr(10);
+      _session_id = utils.randomStr(10);
     }
 
     _url = url;
@@ -102,7 +108,7 @@ window.splinterlands.socket = (function () {
 
   _message_handlers = {
     transaction_complete(data) {
-      const trx = splinterlands.get_transaction(data.sm_id);
+      const trx = transactionsModule.get_transaction(data.sm_id);
 
       if (trx) {
         clearTimeout(trx.timeout);
@@ -111,29 +117,29 @@ window.splinterlands.socket = (function () {
     },
 
     async purchase_complete(data) {
-      const trx = splinterlands.get_transaction(data.uid);
+      const trx = transactionsModule.get_transaction(data.uid);
 
       if (trx) {
         clearTimeout(trx.timeout);
         trx.resolve(data);
       } else {
         if (data.type == 'starter_pack') {
-          splinterlands.get_player().starter_pack_purchase = true;
+          playerModule.get_player().starter_pack_purchase = true;
 
-          splinterlands.utils.loadScript('https://platform.twitter.com/oct.js', () => {
+          utils.loadScript('https://platform.twitter.com/oct.js', () => {
             twttr.conversion.trackPid('o4d35', { tw_sale_amount: 10, tw_order_quantity: 1 });
           });
 
-          const womplay_id = await splinterlands.get_player().get_womplay_id();
+          const womplay_id = await playerModule.get_player().get_womplay_id();
           if (womplay_id) {
-            await splinterlands.ec_api('/womplay/tracking', { womplay_id, event_name: 'purchased_spellbook' });
+            await ec_api('/womplay/tracking', { womplay_id, event_name: 'purchased_spellbook' });
           }
         }
 
         if (data.type == 'booster_pack') {
-          const womplay_id = await splinterlands.get_player().get_womplay_id();
+          const womplay_id = await playerModule.get_player().get_womplay_id();
           if (womplay_id) {
-            await splinterlands.ec_api('/womplay/tracking', { womplay_id, event_name: 'purchased_booster_pack' });
+            await ec_api('/womplay/tracking', { womplay_id, event_name: 'purchased_booster_pack' });
           }
         }
 
@@ -148,11 +154,11 @@ window.splinterlands.socket = (function () {
     },
 
     match_found(data) {
-      let match = splinterlands.get_match();
+      let match = matchModule.get_match();
 
       // (match.id == data.opponent) check is for challenges
       if (match && (match.id == data.id || match.id == data.opponent)) {
-        match = splinterlands.set_match(data);
+        match = matchModule.set_match(data);
 
         if (match.on_match) {
           match.on_match(match);
@@ -161,59 +167,59 @@ window.splinterlands.socket = (function () {
     },
 
     battle_cancelled(data) {
-      const match = splinterlands.get_match();
+      const match = matchModule.get_match();
 
       if (match && match.id == data.id) {
         if (match.on_timeout) {
           match.on_timeout({ error: 'Neither player submitted a team in the allotted time so the match has been cancelled.', code: 'match_cancelled' });
         }
 
-        splinterlands.set_match(null);
+        matchModule.set_match(null);
       }
     },
 
     match_not_found(data) {
-      const match = splinterlands.get_match();
+      const match = matchModule.get_match();
 
       if (match && match.id == data.id) {
         if (match.on_timeout) {
           match.on_timeout({ error: 'No suitable opponent could be found, please try again.', code: 'match_not_found' });
         }
 
-        splinterlands.set_match(null);
+        matchModule.set_match(null);
       }
     },
 
     async battle_result(data) {
-      const match = splinterlands.get_match();
+      const match = matchModule.get_match();
 
       snapyr.track('battle_result', {
         match_type: data.match_type,
         winner: data.winner,
       });
 
-      const player = splinterlands.get_player();
+      const player = playerModule.get_player();
       if (player.battles == 0) {
         const womplay_id = await player.get_womplay_id();
         if (womplay_id) {
-          await splinterlands.ec_api('/womplay/tracking', { womplay_id, event_name: 'completed_first_battle' });
+          await ec_api('/womplay/tracking', { womplay_id, event_name: 'completed_first_battle' });
         }
       }
 
       if (match && match.id == data.id) {
         if (match.on_result) {
-          match.on_result(await splinterlands.Battle.load(data.id));
+          match.on_result(await Battle.load(data.id));
         }
 
-        splinterlands.set_match(null);
+        matchModule.set_match(null);
       }
     },
 
     opponent_submit_team(data) {
-      let match = splinterlands.get_match();
+      let match = matchModule.get_match();
 
       if (match && match.id == data.id) {
-        match = splinterlands.set_match(data);
+        match = matchModule.set_match(data);
 
         if (match.on_opponent_submit) {
           match.on_opponent_submit(match);
@@ -223,7 +229,7 @@ window.splinterlands.socket = (function () {
 
     guild_chat(data) {
       if (data.player_info) {
-        data.player = new splinterlands.Player(data.player_info);
+        data.player = new Player(data.player_info);
         delete data.player_info;
       }
 
@@ -236,7 +242,7 @@ window.splinterlands.socket = (function () {
 
     global_chat(data) {
       if (data.player_info) {
-        data.player = new splinterlands.Player(data.player_info);
+        data.player = new Player(data.player_info);
         delete data.player_info;
       }
 
@@ -244,13 +250,13 @@ window.splinterlands.socket = (function () {
     },
 
     balance_update(data) {
-      const balance = splinterlands.get_player().balances.find((b) => b.token == data.token);
+      const balance = playerModule.get_player().balances.find((b) => b.token == data.token);
 
       // Update the balance record for the current player
       if (balance) {
         balance.balance = parseFloat(data.balance_end);
       } else {
-        splinterlands.get_player().balances.push({ player: data.player, token: data.token, balance: parseFloat(data.balance_end) });
+        playerModule.get_player().balances.push({ player: data.player, token: data.token, balance: parseFloat(data.balance_end) });
       }
 
       // Emit a balance_update event
@@ -258,11 +264,11 @@ window.splinterlands.socket = (function () {
     },
 
     rating_update(data) {
-      splinterlands.get_player().update_rating(data.new_rating, data.new_league);
+      playerModule.get_player().update_rating(data.new_rating, data.new_league);
 
-      if (data.new_collection_power !== undefined && splinterlands.get_player().collection_power != data.new_collection_power) {
-        splinterlands.get_player().collection_power = data.new_collection_power;
-        splinterlands.get_player().has_collection_power_changed = true;
+      if (data.new_collection_power !== undefined && playerModule.get_player().collection_power != data.new_collection_power) {
+        playerModule.get_player().collection_power = data.new_collection_power;
+        playerModule.get_player().has_collection_power_changed = true;
       }
 
       // Emit a rating_update event
@@ -270,8 +276,8 @@ window.splinterlands.socket = (function () {
     },
 
     quest_progress(data) {
-      splinterlands.get_player().quest = new splinterlands.Quest(data);
-      window.dispatchEvent(new CustomEvent('splinterlands:quest_progress', { detail: splinterlands.get_player().quest }));
+      playerModule.get_player().quest = new Quest(data);
+      window.dispatchEvent(new CustomEvent('splinterlands:quest_progress', { detail: playerModule.get_player().quest }));
     },
 
     received_gifts(data) {
@@ -297,3 +303,5 @@ window.splinterlands.socket = (function () {
 
   return { connect, close, send };
 })();
+
+export default socket;

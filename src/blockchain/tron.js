@@ -1,12 +1,10 @@
-/* global splinterlands, tronWeb, TronWeb */
-if (!window.splinterlands) {
-  window.splinterlands = {};
-}
+/* global tronWeb, TronWeb */
+import utils from '../utils';
 
-window.splinterlands.tron = (function () {
+const tron = (function () {
   async function loadTronWeb() {
     if (!window.tronWeb) {
-      await splinterlands.utils.loadScriptAsync('https://d36mxiodymuqjm.cloudfront.net/libraries/TronWeb.js');
+      await utils.loadScriptAsync('https://d36mxiodymuqjm.cloudfront.net/libraries/TronWeb.js');
     }
 
     window.tronWeb = new TronWeb({ fullHost: 'https://api.trongrid.io' });
@@ -32,3 +30,5 @@ window.splinterlands.tron = (function () {
 
   return { sendTransaction, sendToken, browser_payment_available };
 })();
+
+export default tron;

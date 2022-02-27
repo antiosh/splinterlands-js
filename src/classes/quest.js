@@ -1,10 +1,14 @@
-/* global splinterlands */
-splinterlands.Quest = class {
+import ops from '../ops';
+import { ec_api } from '../modules/api';
+import settingsModule from '../modules/settings';
+import playerModule from '../modules/player';
+
+class Quest {
   constructor(data) {
     Object.keys(data).forEach((k) => (this[k] = data[k]));
 
     this.created_date = new Date(this.created_date || 0);
-    this.details = splinterlands.get_settings().quests.find((q) => q.name == this.name);
+    this.details = settingsModule.get_settings().quests.find((q) => q.name == this.name);
   }
 
   rewards(league_num) {
@@ -32,19 +36,21 @@ splinterlands.Quest = class {
   }
 
   async claim_rewards() {
-    const womplay_id = await splinterlands.get_player().get_womplay_id();
+    const womplay_id = await playerModule.get_player().get_womplay_id();
     if (womplay_id) {
-      await splinterlands.ec_api('/womplay/tracking', { womplay_id, event_name: 'completed_daily_quest' });
+      await ec_api('/womplay/tracking', { womplay_id, event_name: 'completed_daily_quest' });
     }
 
-    return await splinterlands.ops.claim_quest_rewards(this.id);
+    return await ops.claim_quest_rewards(this.id);
   }
 
   async start_quest() {
-    return await splinterlands.ops.start_quest();
+    return await ops.start_quest();
   }
 
   async refresh_quest() {
-    return await splinterlands.ops.refresh_quest();
+    return await ops.refresh_quest();
   }
-};
+}
+
+export default Quest;

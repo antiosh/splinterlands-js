@@ -1,5 +1,4 @@
-/* global splinterlands */
-splinterlands.PlayerSettings = class {
+class PlayerSettings {
   static get is_music_muted() {
     return localStorage.getItem('splinterlands:is_music_muted') == 'true';
   }
@@ -23,4 +22,6 @@ splinterlands.PlayerSettings = class {
   static set_team_create_sort(sort_option) {
     localStorage.setItem('splinterlands:team_create_sort', sort_option);
   }
-};
+}
+
+export default PlayerSettings;

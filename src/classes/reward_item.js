@@ -1,10 +1,12 @@
-/* global splinterlands */
-splinterlands.RewardItem = class {
+import Card from './card';
+import Potion from './potion';
+
+class RewardItem {
   constructor(data) {
     Object.keys(data).forEach((k) => (this[k] = data[k]));
 
     if (this.card) {
-      this.card = new splinterlands.Card(this.card);
+      this.card = new Card(this.card);
     }
   }
 
@@ -17,7 +19,7 @@ splinterlands.RewardItem = class {
       case 'credits':
         return `${this.quantity} Credits`;
       case 'potion': {
-        const potion = splinterlands.Potion.get_potion(this.potion_type);
+        const potion = Potion.get_potion(this.potion_type);
         return `${this.quantity} ${potion.name} Potion Charge${this.quantity > 1 ? 's' : ''}`;
       }
       case 'pack': {
@@ -49,7 +51,7 @@ splinterlands.RewardItem = class {
       case 'credits':
         return 'https://d36mxiodymuqjm.cloudfront.net/website/ui_elements/shop/img_credits.png';
       case 'potion':
-        return splinterlands.Potion.get_potion(this.potion_type).image_url;
+        return Potion.get_potion(this.potion_type).image_url;
       case 'pack':
         if (this.edition == 2) {
           return 'https://d36mxiodymuqjm.cloudfront.net/website/ui_elements/open_packs/img_essence-orb%402x.png';
@@ -68,4 +70,6 @@ splinterlands.RewardItem = class {
         return '';
     }
   }
-};
+}
+
+export default RewardItem;

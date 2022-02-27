@@ -1,9 +1,9 @@
-/* global splinterlands, web3, ethereum */
-if (!window.splinterlands) {
-  window.splinterlands = {};
-}
+/* global web3, ethereum */
+import settingsModule from '../modules/settings';
 
-window.splinterlands.ethereum = (function () {
+const { get_settings } = settingsModule;
+
+const ethereumBlockchain = (function () {
   const tokenContracts = {
     GAME: {
       address: '0x63f88A2298a5c4AEE3c216Aa6D926B184a4b2437',
@@ -94,8 +94,8 @@ window.splinterlands.ethereum = (function () {
         const player_address = window.web3.eth.accounts.givenProvider.selectedAddress;
         const contract_addr = tokenContracts[token].address;
 
-        const contract = new window.web3.eth.Contract(JSON.parse(splinterlands.get_settings().ethereum.contracts.crystals.abi.result), contract_addr);
-        const allowance = await contract.methods.allowance(player_address, splinterlands.get_settings().ethereum.contracts.payments.address).call({ from: player_address });
+        const contract = new window.web3.eth.Contract(JSON.parse(get_settings().ethereum.contracts.crystals.abi.result), contract_addr);
+        const allowance = await contract.methods.allowance(player_address, get_settings().ethereum.contracts.payments.address).call({ from: player_address });
 
         console.log(allowance);
 
@@ -125,14 +125,11 @@ window.splinterlands.ethereum = (function () {
         }
 
         const player_address = window.web3.eth.accounts.givenProvider.selectedAddress;
-        const contract = new window.web3.eth.Contract(JSON.parse(splinterlands.get_settings().ethereum.contracts.crystals.abi.result), tokenContracts[token].address);
+        const contract = new window.web3.eth.Contract(JSON.parse(get_settings().ethereum.contracts.crystals.abi.result), tokenContracts[token].address);
         let confirm_sent = false;
 
         contract.methods
-          .approve(
-            splinterlands.get_settings().ethereum.contracts.payments.address,
-            web3.utils.toBN('0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff').toString(),
-          )
+          .approve(get_settings().ethereum.contracts.payments.address, web3.utils.toBN('0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff').toString())
           .send({ from: player_address })
           .on('transactionHash', (hash) => status_update_callback({ type: 'approval', status: 'broadcast', data: { hash } }))
           .on('confirmation', (confirmationNumber, receipt) => {
@@ -172,11 +169,11 @@ window.splinterlands.ethereum = (function () {
         }
 
         const player_address = window.web3.eth.accounts.givenProvider.selectedAddress;
-        const payments_addr = splinterlands.get_settings().ethereum.contracts.payments.address;
+        const payments_addr = get_settings().ethereum.contracts.payments.address;
         const bn_amount = web3.utils.toBN(amount).mul(web3.utils.toBN(10).pow(web3.utils.toBN(tokenContracts[token].precision - 3)));
         let confirm_sent = false;
 
-        const contract = new window.web3.eth.Contract(JSON.parse(splinterlands.get_settings().ethereum.contracts.payments.abi.result), payments_addr);
+        const contract = new window.web3.eth.Contract(JSON.parse(get_settings().ethereum.contracts.payments.abi.result), payments_addr);
         contract.methods
           .payToken(tokenContracts[token].address, bn_amount.toString(), purchase_id)
           .send({ from: player_address })
@@ -307,3 +304,5 @@ window.splinterlands.ethereum = (function () {
 
   return { hasWeb3Obj, getIdentity, web3Auth, web3Pay, erc20Payment };
 })();
+
+export default ethereumBlockchain;

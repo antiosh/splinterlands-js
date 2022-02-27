@@ -1,5 +1,7 @@
-/* global splinterlands */
-splinterlands.CardDetails = class {
+import settingsModule from '../modules/settings';
+
+const { get_settings } = settingsModule;
+class CardDetails {
   constructor(data) {
     Object.keys(data).forEach((k) => (this[k] = data[k]));
 
@@ -20,7 +22,7 @@ splinterlands.CardDetails = class {
   }
 
   get is_starter_card() {
-    return this.rarity < 3 && !!this.available_editions.find((e) => (splinterlands.get_settings().starter_editions || [1, 4]).includes(e));
+    return this.rarity < 3 && !!this.available_editions.find((e) => (get_settings().starter_editions || [1, 4]).includes(e));
   }
 
   get starter_edition() {
@@ -28,7 +30,7 @@ splinterlands.CardDetails = class {
       return -1;
     }
 
-    return this.available_editions.find((e) => (splinterlands.get_settings().starter_editions || [1, 4]).includes(e));
+    return this.available_editions.find((e) => (get_settings().starter_editions || [1, 4]).includes(e));
   }
 
   static get splinter_mapping() {
@@ -73,4 +75,6 @@ splinterlands.CardDetails = class {
     const max_levels = [10, 8, 6, 4];
     return Math.round((max_levels[rarity - 1] / this.max_level) * level);
   }
-};
+}
+
+export default CardDetails;

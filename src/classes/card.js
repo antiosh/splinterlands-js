@@ -1,11 +1,21 @@
-/* global splinterlands */
-splinterlands.Card = class {
+import splinterlandsUtils from '../splinterlands_utils';
+import api from '../modules/api';
+import settingsModule from '../modules/settings';
+import playerModule from '../modules/player';
+import marketModule from '../modules/market';
+import cardLoreModule from '../modules/card_lore';
+import cardsModule from '../modules/cards';
+import utils from '../utils';
+
+const { get_settings } = settingsModule;
+
+class Card {
   constructor(data) {
     Object.keys(data).forEach((k) => (this[k] = data[k]));
-    this.details = splinterlands.get_card_details(this.card_detail_id);
+    this.details = cardsModule.get_card_details(this.card_detail_id);
 
     if (!this.level) {
-      this.level = splinterlands.utils.get_level(this);
+      this.level = splinterlandsUtils.get_level(this);
     }
 
     if (!this.alpha_xp) {
@@ -28,17 +38,17 @@ splinterlands.Card = class {
     }
 
     const xp_property = this.edition == 0 || (this.edition == 2 && this.card_detail_id < 100) ? (this.gold ? 'gold_xp' : 'alpha_xp') : this.gold ? 'beta_gold_xp' : 'beta_xp';
-    this._base_xp = splinterlands.get_settings()[xp_property][this.details.rarity - 1];
+    this._base_xp = get_settings()[xp_property][this.details.rarity - 1];
 
     return this._base_xp;
   }
 
   get max_xp() {
     if (this.edition >= 4 || this.details.tier >= 4) {
-      const rates = splinterlands.get_settings()[this.gold ? 'combine_rates_gold' : 'combine_rates'][this.details.rarity - 1];
+      const rates = get_settings()[this.gold ? 'combine_rates_gold' : 'combine_rates'][this.details.rarity - 1];
       return rates[rates.length - 1];
     }
-    return splinterlands.get_settings().xp_levels[this.details.rarity - 1][this.details.max_level - 2];
+    return get_settings().xp_levels[this.details.rarity - 1][this.details.max_level - 2];
   }
 
   get next_level_progress() {
@@ -57,7 +67,7 @@ splinterlands.Card = class {
     }
 
     if (this.edition >= 4 || this.details.tier >= 4) {
-      const rates = splinterlands.get_settings()[this.gold ? 'combine_rates_gold' : 'combine_rates'][this.details.rarity - 1];
+      const rates = get_settings()[this.gold ? 'combine_rates_gold' : 'combine_rates'][this.details.rarity - 1];
 
       this._next_level_progress = {
         current: this.bcx - rates[this.level - 1] || 0,
@@ -66,7 +76,7 @@ splinterlands.Card = class {
       };
     } else {
       const bcx = this.gold ? this.bcx : Math.max(this.bcx - 1, 0);
-      const xp_levels = splinterlands.get_settings().xp_levels[this.details.rarity - 1];
+      const xp_levels = get_settings().xp_levels[this.details.rarity - 1];
       const next_lvl_bcx = Math.ceil(xp_levels[this.level - 1] / this.base_xp);
       const cur_lvl_bcx = this.level <= 1 ? 0 : Math.ceil(xp_levels[this.level - 2] / this.base_xp);
 
@@ -82,12 +92,12 @@ splinterlands.Card = class {
 
   cards_to_level(level) {
     if (this.edition == 4 || this.details.tier >= 4) {
-      const rates = splinterlands.get_settings()[this.gold ? 'combine_rates_gold' : 'combine_rates'][this.details.rarity - 1];
+      const rates = get_settings()[this.gold ? 'combine_rates_gold' : 'combine_rates'][this.details.rarity - 1];
       const cards = rates[level - 1];
       return cards <= 0 ? 'N/A' : cards;
     }
     const gold_na = [3, 2, 2, 1];
-    const xp_levels = splinterlands.get_settings().xp_levels[this.details.rarity - 1];
+    const xp_levels = get_settings().xp_levels[this.details.rarity - 1];
 
     return this.gold
       ? level <= gold_na[this.details.rarity - 1]
@@ -106,15 +116,15 @@ splinterlands.Card = class {
     let alpha_bcx = 0;
     let alpha_dec = 0;
     const xp = Math.max(this.xp - this.alpha_xp, 0);
-    const burn_rate = splinterlands.get_settings().dec[this.edition >= 4 || this.details.tier >= 4 ? 'untamed_burn_rate' : 'burn_rate'][this.details.rarity - 1];
+    const burn_rate = get_settings().dec[this.edition >= 4 || this.details.tier >= 4 ? 'untamed_burn_rate' : 'burn_rate'][this.details.rarity - 1];
 
     if (this.alpha_xp) {
-      const alpha_bcx_xp = splinterlands.get_settings()[this.gold ? 'gold_xp' : 'alpha_xp'][this.details.rarity - 1];
+      const alpha_bcx_xp = get_settings()[this.gold ? 'gold_xp' : 'alpha_xp'][this.details.rarity - 1];
       alpha_bcx = Math.max(this.gold ? this.alpha_xp / alpha_bcx_xp : this.alpha_xp / alpha_bcx_xp, 1);
-      alpha_dec = burn_rate * alpha_bcx * splinterlands.get_settings().dec.alpha_burn_bonus;
+      alpha_dec = burn_rate * alpha_bcx * get_settings().dec.alpha_burn_bonus;
 
       if (this.gold) {
-        alpha_dec *= splinterlands.get_settings().dec.gold_burn_bonus;
+        alpha_dec *= get_settings().dec.gold_burn_bonus;
       }
     }
 
@@ -132,22 +142,22 @@ splinterlands.Card = class {
 
     if (this.gold) {
       const gold_burn_bonus_prop = this.details.tier >= 7 ? 'gold_burn_bonus_2' : 'gold_burn_bonus';
-      dec *= splinterlands.get_settings().dec[gold_burn_bonus_prop];
+      dec *= get_settings().dec[gold_burn_bonus_prop];
     }
 
     if (this.edition == 0) {
-      dec *= splinterlands.get_settings().dec.alpha_burn_bonus;
+      dec *= get_settings().dec.alpha_burn_bonus;
     }
 
     if (this.edition == 2) {
-      dec *= splinterlands.get_settings().dec.promo_burn_bonus;
+      dec *= get_settings().dec.promo_burn_bonus;
     }
 
     let total_dec = dec + alpha_dec;
 
     // Give a bonus if burning a max level card
     if (this.xp >= this.max_xp) {
-      total_dec *= splinterlands.get_settings().dec.max_burn_bonus;
+      total_dec *= get_settings().dec.max_burn_bonus;
     }
 
     // Tier 7 cards give half the DEC and CP
@@ -166,7 +176,7 @@ splinterlands.Card = class {
     }
 
     // If it's delegated to another player it's not playable
-    if (this.delegated_to && this.delegated_to != splinterlands.get_player().name) {
+    if (this.delegated_to && this.delegated_to != playerModule.get_player().name) {
       return false;
     }
 
@@ -241,7 +251,7 @@ splinterlands.Card = class {
     }
 
     let price_per_bcx = 0;
-    const market_item = splinterlands.get_market().find((i) => i.card_detail_id == this.card_detail_id && i.edition == this.edition && i.gold == this.gold);
+    const market_item = marketModule.get_market().find((i) => i.card_detail_id == this.card_detail_id && i.edition == this.edition && i.gold == this.gold);
 
     if (market_item) {
       price_per_bcx = market_item.low_price_bcx;
@@ -256,21 +266,21 @@ splinterlands.Card = class {
       return 0;
     }
 
-    const cooldown_start = new Date(Date.now() - splinterlands.get_settings().transfer_cooldown_blocks * 3000);
+    const cooldown_start = new Date(Date.now() - get_settings().transfer_cooldown_blocks * 3000);
     const last_transferred_date = new Date(this.last_transferred_date);
     const last_used_date = new Date(this.last_used_date);
     const different_last_used_player = this.delegated_to ? this.delegated_to != this.last_used_player : this.player != this.last_used_player;
 
     if (last_transferred_date > cooldown_start && last_used_date > cooldown_start && different_last_used_player) {
       const seconds_since_last_used = (Date.now() - last_used_date.getTime()) / 1000;
-      return splinterlands.get_settings().transfer_cooldown_blocks * 3 - seconds_since_last_used;
+      return get_settings().transfer_cooldown_blocks * 3 - seconds_since_last_used;
     }
 
     return 0;
   }
 
   get suggested_price() {
-    const market_card = splinterlands.get_market().find((c) => c.card_detail_id == this.details.id && c.gold == this.gold && c.edition == this.edition);
+    const market_card = marketModule.get_market().find((c) => c.card_detail_id == this.details.id && c.gold == this.gold && c.edition == this.edition);
     return market_card ? (market_card.low_price_bcx * this.bcx).toFixed(2) : 'Not Available';
   }
 
@@ -376,7 +386,7 @@ splinterlands.Card = class {
 
       this.stats.abilities.forEach((ability) => {
         const ab = document.createElement('img');
-        ab.setAttribute('src', splinterlands.utils.get_ability_image(ability));
+        ab.setAttribute('src', splinterlandsUtils.get_ability_image(ability));
         ab.setAttribute('class', 'sl-ability-img');
         ab.setAttribute('title', ability);
         abilities.append(ab);
@@ -412,7 +422,7 @@ splinterlands.Card = class {
 
   get image_url() {
     return (
-      splinterlands.utils.CARD_URLS[this.edition] +
+      splinterlandsUtils.CARD_URLS[this.edition] +
       (this.skin ? `${this.skin}/` : '') +
       encodeURIComponent(this.details.name.replace(/'/g, '')) +
       (this.gold ? '_gold' : '') +
@@ -422,7 +432,7 @@ splinterlands.Card = class {
 
   get image_url_battle() {
     return (
-      splinterlands.utils.BATTLE_CARD_URLS[this.edition] +
+      splinterlandsUtils.BATTLE_CARD_URLS[this.edition] +
       (this.skin ? `${this.skin}/` : '') +
       encodeURIComponent(this.details.name.replace(/'/g, '')) +
       (this.gold ? '_gold' : '') +
@@ -433,7 +443,7 @@ splinterlands.Card = class {
   get image_url_battle_mobile() {
     if (this.details.type == 'Summoner') {
       return (
-        splinterlands.utils.SUMMONER_CARD_URL_MOBILE +
+        splinterlandsUtils.SUMMONER_CARD_URL_MOBILE +
         (this.team_num == 2 ? 'Right/' : 'Left/') +
         encodeURIComponent(this.details.name.replace(/'/g, '')) +
         (this.details.edition == 7 || this.details.tier == 7 ? '.jpg' : '.png')
@@ -443,7 +453,7 @@ splinterlands.Card = class {
     const edition = this.edition == 1 || this.edition == 3 ? 1 : 0;
 
     return (
-      splinterlands.utils.BATTLE_CARD_URLS_MOBILE[edition] +
+      splinterlandsUtils.BATTLE_CARD_URLS_MOBILE[edition] +
       encodeURIComponent(this.details.name.replace(/'/g, '')) +
       (this.gold ? '_gold' : '') +
       (this.details.edition == 7 || this.details.tier == 7 ? '.jpg' : '.png')
@@ -451,11 +461,16 @@ splinterlands.Card = class {
   }
 
   async lore() {
-    return await splinterlands.load_card_lore(this.card_detail_id);
+    return await cardLoreModule.load_card_lore(this.card_detail_id);
   }
 
   async market_cards() {
-    return await splinterlands.Market.for_sale_by_card(this.card_detail_id, this.gold, this.edition);
+    const market_cards = await api('/market/for_sale_by_card', {
+      card_detail_id: this.card_detail_id,
+      gold: this.gold,
+      edition: this.edition,
+    });
+    return market_cards.map((c) => new Card(c));
   }
 
   static get_combine_result(cards) {
@@ -481,8 +496,8 @@ splinterlands.Card = class {
       if (!gold && first_card.edition < 4 && card.details.tier < 4) {
         total +=
           card.edition == 0 || (card.edition == 2 && card.details.id < 100)
-            ? splinterlands.get_settings().xp_levels[card.details.rarity - 1][0]
-            : splinterlands.get_settings().beta_xp[card.details.rarity - 1];
+            ? get_settings().xp_levels[card.details.rarity - 1][0]
+            : get_settings().beta_xp[card.details.rarity - 1];
       }
 
       // Stop combining if we got to max level
@@ -491,7 +506,7 @@ splinterlands.Card = class {
       }
     }
 
-    return new splinterlands.Card({
+    return new Card({
       uid: first_card.uid,
       card_detail_id: first_card.card_detail_id,
       xp: total,
@@ -501,7 +516,19 @@ splinterlands.Card = class {
     });
   }
 
+  static get_starter_card(id, edition) {
+    return new Card({
+      uid: `starter-${id}-${utils.randomStr(5)}`,
+      card_detail_id: id,
+      gold: false,
+      xp: edition >= 4 ? 1 : 0,
+      edition,
+    });
+  }
+
   get is_starter() {
     return this.uid && this.uid.startsWith('starter-');
   }
-};
+}
+
+export default Card;

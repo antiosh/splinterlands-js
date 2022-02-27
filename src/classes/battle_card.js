@@ -1,5 +1,6 @@
-/* global splinterlands */
-splinterlands.BattleCard = class extends splinterlands.Card {
+import Card from './card';
+
+class BattleCard extends Card {
   constructor(data) {
     super(data);
   }
@@ -29,4 +30,6 @@ splinterlands.BattleCard = class extends splinterlands.Card {
   update(new_state) {
     this.state = new_state;
   }
-};
+}
+
+export default BattleCard;
