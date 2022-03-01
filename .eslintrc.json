@@ -23,6 +23,7 @@
     "class-methods-use-this": "off",
     "radix": "off",
     "no-console": "off",
-    "func-names": "off"
+    "func-names": "off",
+    "import/no-cycle": "off"
   }
 }

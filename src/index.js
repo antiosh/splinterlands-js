@@ -37,57 +37,61 @@ import Transaction from './classes/transaction';
 
 import mobileApp from './modules/mobile_app';
 
-// libraries
-window.hive = hive;
-window.steem = window.hive;
-window.eosjs_ecc = ecc;
-window.md5 = md5;
-window.Web3 = Web3;
+export default splinterlands;
 
-// main
-window.splinterlands = splinterlands;
-window.splinterlands.socket = socket;
-window.splinterlands.ops = ops;
-window.splinterlands.utils = {
-  ...splinterlandsUtils,
-  ...utils,
-};
+if (window) {
+  // libraries
+  window.hive = hive;
+  window.steem = window.hive;
+  window.eosjs_ecc = ecc;
+  window.md5 = md5;
+  window.Web3 = Web3;
 
-// blockchain
-window.splinterlands.bsc = bsc;
-window.splinterlands.eos = eos;
-window.splinterlands.ethereum = ethereum;
-window.splinterlands.tron = tron;
+  // main
+  window.splinterlands = splinterlands;
+  window.splinterlands.socket = socket;
+  window.splinterlands.ops = ops;
+  window.splinterlands.utils = {
+    ...splinterlandsUtils,
+    ...utils,
+  };
 
-// classes
-window.splinterlands.BattleCard = BattleCard;
-window.splinterlands.Battle = Battle;
-window.splinterlands.CardDetails = CardDetails;
-window.splinterlands.Card = Card;
-window.splinterlands.GuildBuilding = GuildBuilding;
-window.splinterlands.Guild = Guild;
-window.splinterlands.League = League;
-window.splinterlands.MarketCardGrouped = MarketCardGrouped;
-window.splinterlands.MarketCard = MarketCard;
-window.splinterlands.Market = Market;
-window.splinterlands.Match = Match;
-window.splinterlands.PlayerSettings = PlayerSettings;
-window.splinterlands.Player = Player;
-window.splinterlands.Potion = Potion;
-window.splinterlands.Purchase = Purchase;
-window.splinterlands.Quest = Quest;
-window.splinterlands.RewardItem = RewardItem;
-window.splinterlands.Season = Season;
-window.splinterlands.Store = Store;
-window.splinterlands.Transaction = Transaction;
+  // blockchain
+  window.splinterlands.bsc = bsc;
+  window.splinterlands.eos = eos;
+  window.splinterlands.ethereum = ethereum;
+  window.splinterlands.tron = tron;
 
-// mobile
-window.startWrappedApp = mobileApp.startWrappedApp;
-window.showLoadingAnimation = mobileApp.showLoadingAnimation;
+  // classes
+  window.splinterlands.BattleCard = BattleCard;
+  window.splinterlands.Battle = Battle;
+  window.splinterlands.CardDetails = CardDetails;
+  window.splinterlands.Card = Card;
+  window.splinterlands.GuildBuilding = GuildBuilding;
+  window.splinterlands.Guild = Guild;
+  window.splinterlands.League = League;
+  window.splinterlands.MarketCardGrouped = MarketCardGrouped;
+  window.splinterlands.MarketCard = MarketCard;
+  window.splinterlands.Market = Market;
+  window.splinterlands.Match = Match;
+  window.splinterlands.PlayerSettings = PlayerSettings;
+  window.splinterlands.Player = Player;
+  window.splinterlands.Potion = Potion;
+  window.splinterlands.Purchase = Purchase;
+  window.splinterlands.Quest = Quest;
+  window.splinterlands.RewardItem = RewardItem;
+  window.splinterlands.Season = Season;
+  window.splinterlands.Store = Store;
+  window.splinterlands.Transaction = Transaction;
 
-// backwards compatability
-window.splinterlands.utils.account_exists = window.splinterlands.account_exists;
-window.splinterlands.utils.get_monster_level = window.splinterlands.get_monster_level;
-window.splinterlands.utils.get_summoner_level = window.splinterlands.get_summoner_level;
-window.splinterlands.utils.validate_acct_name = window.splinterlands.validate_acct_name;
-window.splinterlands.utils.get_starter_card = window.splinterlands.Card.get_starter_card;
+  // mobile
+  window.startWrappedApp = mobileApp.startWrappedApp;
+  window.showLoadingAnimation = mobileApp.showLoadingAnimation;
+
+  // backwards compatability
+  window.splinterlands.utils.account_exists = window.splinterlands.account_exists;
+  window.splinterlands.utils.get_monster_level = window.splinterlands.get_monster_level;
+  window.splinterlands.utils.get_summoner_level = window.splinterlands.get_summoner_level;
+  window.splinterlands.utils.validate_acct_name = window.splinterlands.validate_acct_name;
+  window.splinterlands.utils.get_starter_card = window.splinterlands.Card.get_starter_card;
+}

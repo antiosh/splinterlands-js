@@ -10,7 +10,7 @@ import Battle from './classes/battle';
 import Player from './classes/player';
 import Quest from './classes/quest';
 
-export const socket = (function () {
+const socket = (function () {
   let _url = null;
   let _ws = null;
   let _ping_interval = null;

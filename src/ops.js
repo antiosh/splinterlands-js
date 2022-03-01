@@ -12,7 +12,7 @@ import RewardItem from './classes/reward_item';
 import Card from './classes/card';
 import Quest from './classes/quest';
 
-export const ops = (function () {
+const ops = (function () {
   async function combine_cards(card_ids) {
     return transactionsModule.send_tx_wrapper('combine_cards', 'Combine Cards', { cards: card_ids }, async (tx) => {
       playerModule.get_player().has_collection_power_changed = true;
