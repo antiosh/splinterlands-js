@@ -2,7 +2,7 @@
   "name": "splinterlands-js",
   "version": "1.0.1",
   "description": "Splinterlands JavaScript Client Library",
-  "main": "dist/main.js",
+  "main": "dist/splinterlands.min.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "webpack",
