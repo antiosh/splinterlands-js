@@ -1,7 +1,7 @@
 import CardDetails from '../classes/card_details';
 import Card from '../classes/card';
 import api from './api';
-import cardsModule from './cards';
+import { getCardDetails, getCards } from './cards';
 import playerModule from './player';
 
 const collection = (function () {
@@ -29,8 +29,8 @@ const collection = (function () {
       _collection_grouped = null;
 
       // If this is the current player's collection, add any "starter" cards
-      cardsModule
-        .get_card_details()
+      const cardDetails = await getCardDetails();
+      cardDetails
         .filter((d) => d.is_starter_card && !_collection.find((c) => c.card_detail_id == d.id))
         .forEach((c) => _collection.push(Card.get_starter_card(c.id, c.starter_edition)));
 
@@ -43,7 +43,7 @@ const collection = (function () {
     return _collection;
   }
 
-  function group_collection(cardCollection, id_only) {
+  async function group_collection(cardCollection, id_only) {
     if (!cardCollection && _collection_grouped && !id_only) {
       return _collection_grouped;
     }
@@ -57,7 +57,8 @@ const collection = (function () {
     const grouped = [];
 
     // Group the cards in the collection by card_detail_id, edition, and gold foil
-    cardsModule.get_cards().forEach((details) => {
+    const cards = await getCards();
+    cards.forEach((details) => {
       if (id_only) {
         grouped.push(new CardDetails({ card_detail_id: details.id, owned: cardCollection.filter((o) => o.card_detail_id == details.id), ...details }));
       } else {

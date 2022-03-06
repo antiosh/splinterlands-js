@@ -41,7 +41,7 @@ class Store {
     return currencies;
   }
 
-  static async get_available_packs(edition) {
+  static async getAvailablePacks(edition) {
     try {
       const { packs } = await api('/purchases/stats');
       return packs.find((p) => p.edition == edition).available;
@@ -213,7 +213,7 @@ class Store {
       edition = 4;
     }
     const purchases = await api('/players/pack_purchases', { edition });
-    const available = await Store.get_available_packs(edition);
+    const available = await Store.getAvailablePacks(edition);
 
     if (edition === 5) {
       return {

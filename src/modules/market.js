@@ -1,14 +1,7 @@
-const market = (function () {
-  let _market = [];
+import api from './api';
 
-  function set_market(marketData) {
-    _market = marketData;
-  }
-
-  return {
-    set_market,
-    get_market: () => _market,
-  };
-})();
-
-export default market;
+// eslint-disable-next-line import/prefer-default-export
+export async function getMarketForSale() {
+  const marketForSale = await api('/market/for_sale_grouped');
+  return marketForSale;
+}

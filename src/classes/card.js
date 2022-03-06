@@ -3,8 +3,8 @@ import api from '../modules/api';
 import settingsModule from '../modules/settings';
 import playerModule from '../modules/player';
 import marketModule from '../modules/market';
-import cardLoreModule from '../modules/card_lore';
-import cardsModule from '../modules/cards';
+import { getCardLore } from '../modules/cardLore';
+import { getCardDetails } from '../modules/cards';
 import utils from '../utils';
 
 const { get_settings } = settingsModule;
@@ -12,7 +12,7 @@ const { get_settings } = settingsModule;
 class Card {
   constructor(data) {
     Object.keys(data).forEach((k) => (this[k] = data[k]));
-    this.details = cardsModule.get_card_details(this.card_detail_id);
+    this.details = getCardDetails(this.card_detail_id);
 
     if (!this.level) {
       this.level = splinterlandsUtils.get_level(this);
@@ -461,7 +461,7 @@ class Card {
   }
 
   async lore() {
-    return await cardLoreModule.load_card_lore(this.card_detail_id);
+    return await getCardLore(this.card_detail_id);
   }
 
   async market_cards() {
