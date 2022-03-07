@@ -4,7 +4,7 @@
   "description": "Splinterlands JavaScript Client Library",
   "main": "dist/splinterlands.min.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "jest",
     "build": "webpack",
     "build-staging": "webpack --mode development",
     "minify": "uglifycss src/splinterlands.css > dist/splinterlands.min.css && uglifyjs libraries/eosjs-ecc.min.js libraries/web3.min.js libraries/hive.min.js libraries/md5.min.js src/splinterlands.js src/utils.js src/socket.js src/classes/card.js src/classes/league.js src/classes/guild.js src/classes/player_settings.js src/classes/player.js src/classes/quest.js src/classes/potion.js src/classes/card_details.js src/classes/guild_building.js src/classes/store.js src/classes/battle.js src/classes/transaction.js src/classes/match.js src/classes/battle_card.js src/classes/reward_item.js src/classes/season.js src/classes/market.js src/ops.js src/blockchain/tron.js src/blockchain/ethereum.js src/blockchain/eos.js  -c -o dist/splinterlands.min.js",
@@ -37,8 +37,12 @@
     "eslint": "^8.2.0",
     "eslint-config-airbnb-base": "^15.0.0",
     "eslint-config-prettier": "^8.4.0",
+    "eslint-plugin-jest": "^26.1.1",
     "eslint-plugin-prettier": "^4.0.0",
+    "jest": "^27.5.1",
+    "jest-esm-transformer": "^1.0.0",
     "prettier": "^2.5.1",
+    "sinon": "^13.0.1",
     "webpack": "^4.46.0",
     "webpack-cli": "^4.9.2"
   }

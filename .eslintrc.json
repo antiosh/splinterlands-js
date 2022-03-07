@@ -1,9 +1,10 @@
 {
   "env": {
-    "browser": true
+    "browser": true,
+    "jest/globals": true
   },
   "extends": ["airbnb-base", "plugin:prettier/recommended"],
-  "plugins": ["prettier"],
+  "plugins": ["prettier", "jest"],
   "ignorePatterns": ["dist/", "libraries/", "publish.js"],
   "rules": {
     "prettier/prettier": "error",

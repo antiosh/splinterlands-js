@@ -528,7 +528,7 @@ const splinterlands = (function () {
     return await transactionsModule.check_tx(purchase_id);
   }
 
-  async function check_promo_code(code) {
+  async function checkPromoCode(code) {
     return await api('/purchases/check_code', { code });
   }
 
@@ -542,15 +542,15 @@ const splinterlands = (function () {
     return response;
   }
 
-  async function get_leaderboard(season, leaderboard_id, page) {
-    const leaderboard = await api('/players/leaderboard_with_player', { season, leaderboard: leaderboard_id, page });
+  async function getLeaderboard(season, leaderboardId, page) {
+    const response = await api('/players/leaderboard_with_player', { season, leaderboard: leaderboardId, page });
 
-    if (leaderboard.leaderboard) {
-      leaderboard.leaderboard = leaderboard.leaderboard.map((p) => new Player(p));
+    if (response.leaderboard) {
+      response.leaderboard = response.leaderboard.map((p) => new Player(p));
     }
 
-    leaderboard.player = leaderboard.player ? new Player(leaderboard.player) : playerModule.get_player();
-    return leaderboard;
+    response.player = response.player ? new Player(response.player) : playerModule.get_player();
+    return response;
   }
 
   async function get_global_chat() {
@@ -637,7 +637,7 @@ const splinterlands = (function () {
     browser_payment,
     create_account_email,
     emailLogin,
-    check_promo_code,
+    checkPromoCode,
     redeem_promo_code,
     resetPassword,
     getCardLore,
@@ -647,7 +647,7 @@ const splinterlands = (function () {
     wait_for_match: matchModule.wait_for_match,
     wait_for_result: matchModule.wait_for_result,
     getBattleHistory,
-    get_leaderboard,
+    getLeaderboard,
     get_global_chat,
     set_url: urlModule.set_url,
     external_deposit,

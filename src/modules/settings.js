@@ -1,7 +1,10 @@
 import api from './api';
 
 const settings = (function () {
-  let _settings = {};
+  let _settings = {
+    leagues: [],
+    quests: [],
+  };
 
   async function load_settings() {
     const response = await api('/settings');
